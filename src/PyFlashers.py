@@ -40,20 +40,22 @@ the #number# field
 for answer comparison, if the answer isn't 100% right, but there are matching words
 print out the matching words with variable length _______'s where the words were
 either wrong or missing.  If it's completely wrong (else) then tell them they're dumb
+-- NEXT --
+validate entry to 3 digits for number area
 -- END --
 
 -- THINGS TO UNFUCK --
-number field doesn't need a text field, an entry will do fine, ... fix it
 
+-- END -- 
 '''
 
-import Tkinter
+import Tkinter as tk
 #import PyFlashers_defines
 import tkFileDialog
 
-class FlashCard(Tkinter.Frame):
+class FlashCard(tk.Frame):
     def __init__(self, parent):
-        Tkinter.Frame.__init__(self, parent)   
+        tk.Frame.__init__(self, parent)   
         self.parent = parent        
         self.initialize()
 
@@ -61,56 +63,97 @@ class FlashCard(Tkinter.Frame):
     def initialize(self):
         
         self.parent.title("PyFlashers")
+        self.text_bool = False
         
-        menu_bar = Tkinter.Menu(self.parent)
+        ###############################################################
+        ################            menu bar            ###############
+        ###############################################################
+            
+        menu_bar = tk.Menu(self.parent)
         self.parent.config(menu = menu_bar)
-        
-        file_menu = Tkinter.Menu(menu_bar)
+
+        file_menu = tk.Menu(menu_bar)
         file_menu.add_command(label = 'Open', command = self.open_file)
         file_menu.add_command(label = 'Save as...',
                                    command = self.save_as)
         menu_bar.add_cascade(label = 'File', menu = file_menu)
+              
+        ###############################################################
+        ################            tool bar            ###############
+        ###############################################################
         
+        toolbar = tk.Frame()
+        
+        done_next = tk.Button(name="toolbar", text="Next", 
+                              borderwidth=1)#, command=self.OnBold,)
+        done_next.pack(in_=toolbar, side="right")
+        
+        go_to_button = tk.Button(name='go To', text='Go to...',
+                                        borderwidth = 1)
+        go_to_button.pack(in_=toolbar, side = 'right')
+
+        self.space_var = tk.IntVar()
+        
+        create_button = tk.Radiobutton(toolbar, text = 'Creation Station',
+                                       variable = self.space_var, value = 0, 
+                                       indicatoron = 0, command = self.setup)
+        create_button.pack(side='left')
+        
+        reader_button = tk.Radiobutton(toolbar, text = 'Reader', 
+                                       variable = self.space_var, value = 1, 
+                                       indicatoron = 0, command = self.setup)
+        reader_button.pack(side='left')
+        
+        num_var = tk.StringVar()
+        num_display = tk.Entry(toolbar, width = 8,
+                                         justify = 'center', 
+                                         textvariable = num_var)
+        num_var.set('0')
+        num_display.pack(in_ = toolbar, expand = True, fill = tk.Y)
+        
+        toolbar.pack(side="top", fill="x")
         
         ###############################################################
-        self.toolbar = Tkinter.Frame()
-        self.done_next = Tkinter.Button(name="toolbar", text="Next", 
-                              borderwidth=1)#, command=self.OnBold,)
-        self.done_next.pack(in_=self.toolbar, side="right")
-        
-        self.something = Tkinter.Button(name='stuff', text='stuff',
-                                        borderwidth = 1)
-        self.something.pack(in_=self.toolbar, side = 'left')
-        
-        text_frame_1 = Tkinter.Frame(borderwidth=1, relief="sunken")
-        self.text_1 = Tkinter.Text(height = 5, width = 30, wrap="word", 
-                                   background="white", borderwidth=0, 
-                                   highlightthickness=0)
-        
-        text_frame_2 = Tkinter.Frame(borderwidth=1, relief="sunken")
-        self.text_2 = Tkinter.Text(height = 5, width = 30, wrap="word", background="white", 
-                            borderwidth=0, highlightthickness=0)
-        
-        text_frame_3 = Tkinter.Frame(borderwidth=1, relief="sunken")
-        self.text_3 = Tkinter.Text(height = 5, width = 30, wrap="word", background="white", 
-                            borderwidth=0, highlightthickness=0)
-        #self.vsb = Tkinter.Scrollbar(orient="vertical", borderwidth=1,
-                                #command=self.text.yview)
-        #self.text.configure(yscrollcommand=self.vsb.set)
-        #self.vsb.pack(in_=text_frame,side="right", fill="y", expand=False)
-        self.text_1.pack(in_=text_frame_1, side="left", fill="both", expand=True)
-        self.text_2.pack(in_=text_frame_2, side="left", fill="both", expand=True)
-        self.text_3.pack(in_=text_frame_3, side="left", fill="both", expand=True)
-        self.toolbar.pack(side="top", fill="x")
-
-        text_frame_1.pack(side="bottom", fill="both", expand=True)
-        text_frame_2.pack(side="bottom", fill="both", expand=True)
-        text_frame_3.pack(side="bottom", fill="both", expand=True)
-        ################################################################
-        
+        ################         text frames            ###############
+        ###############################################################
+    def text_frame(self):
+        if self.text_bool == False:
+            self.text_frame_1 = tk.Frame(borderwidth=1, relief="sunken")
+            text_1 = tk.Text(height = 5, width = 30, wrap="word", 
+                                       background="white", borderwidth=0, 
+                                       highlightthickness=0)
+            
+            self.text_frame_2 = tk.Frame(borderwidth=1, relief="sunken")
+            text_2 = tk.Text(height = 5, width = 30, wrap="word", 
+                             background="white", borderwidth=0, 
+                             highlightthickness=0)
+            
+            text_1.pack(in_= self.text_frame_1, side="left", fill="both", 
+                        expand=True)
+            text_2.pack(in_= self.text_frame_2, side="left", fill="both", 
+                        expand=True)
+            
+    
+            self.text_frame_1.pack(side="bottom", fill="both", expand=True)
+            self.text_frame_2.pack(side="bottom", fill="both", expand=True)
+            
+            ###############################################################
+            ################             labels             ###############
+            ###############################################################
+            self.q_label = tk.Label(self.text_frame_2, 
+                               text = 'Question Input', width = 12)
+            self.q_label.pack(side = 'left')
+            
+            self.a_label = tk.Label(self.text_frame_1, 
+                               text = 'Answer Input', width = 12)
+            self.a_label.pack(side = 'left')
+            self.text_bool = True
+        else:
+            pass
         
     def save_as(self):
-        file_name = tkFileDialog.asksaveasfilename(parent = self, title = 'Save the file as...')
+        file_name = tkFileDialog.asksaveasfilename(parent = self, 
+                                                   title = 'Save the file as...')
         if len(file_name) > 0:
             saved_file = open('%s' % file_name, 'w')
             print 'you saved a file'
@@ -118,85 +161,27 @@ class FlashCard(Tkinter.Frame):
             saved_file.close()
             
     def open_file(self):
-        file_name = tkFileDialog.askopenfilename(parent = self, title = 'Open file...')
+        file_name = tkFileDialog.askopenfilename(parent = self, 
+                                                 title = 'Open file...')
         opened_file = open('%s' % file_name, 'r')
         line = opened_file.readline()
         ## check for a non-null file
         ## open it in the appropriate way
         print 'you opened a file'
-        
-        '''
-        
-        
-        self.num_label = Tkinter.Label(self, text = 'Index Number: ').grid(row = 0, column = 0)
-        self.q_label_in = Tkinter.Label(self, text = 'Question Input: ').grid(row = 1, column = 0)
-        self.q_label_in = Tkinter.Label(self, text = 'Answer Input: ').grid(row = 2, column = 0)
-        
-        self.question_var = Tkinter.StringVar()
-        self.entry_question = Tkinter.Entry(self, textvariable = self.question_var)
-        self.question_var.set('this is a question maybe?')
-        self.entry_question.grid(row = 0, column = 1)
-        
-        self.answer_var = Tkinter.StringVar()
-        self.entry_answer = Tkinter.Entry(self, textvariable = self.answer_var)
-        self.answer_var.set('this is a answer maybe?')
-        self.entry_answer.grid(row = 1, column = 1)
-        
-        self.number_var = Tkinter.StringVar()        
-        self.entry_number = Tkinter.Entry(self, textvariable = self.number_var, width = 50)
-        self.number_var.set('this is a number maybe?')
-        self.entry_number.grid(row = 2, column = 1, rowspan = 5, columnspan = 10, sticky = 'S')
-        
-        
-        self.w = Tkinter.Canvas(self, width = 50, height = 20)
-        self.w.create_text(10, 10, text = 'stuff\nstuff\nstuff\nstuff', anchor = 'nw')
-        self.w.grid(row = 2, column = 1)
-
-        
-        self.text = Tkinter.Text(wrap = 'word', background = 'white',
-                                 borderwidth = 0, highlightthickness = 0)
-        self.text_frame = Tkinter.Frame(self.text, borderwidth = 1, 
-                                        relief = 'sunken')
-        self.vsb = Tkinter.Scrollbar(self.text_frame, orient = 'vertical', 
-                                     borderwidth = 1)
-        self.text.configure(yscrollcommand = self.vsb.set)
-        self.text.grid(row = 2, column = 1)
-                
-        
-        
-        ## create a menu object
-        self.menu_bar = Tkinter.Menu(self) 
-        self['menu'] = self.menu_bar 
-        self.file_menu = Tkinter.Menu(self.menu_bar)  
-        self.menu_bar.add_cascade(label = 'File', menu=self.file_menu)
-        self.file_menu.add_command(label = 'Open', command = self.open_file)
-        self.file_menu.add_command(label = 'Save as...',
-                                   command = self.save_as)
-        self.menu_bar.pack(root)
-
-
-        '''           
             
-    ## child window generator
-    ## generic for now
-    ## one window will be for generation
-    ## one window will be for reading / practicing the flash cards
-    def win2(self):
-        # this is the child window
-        board = Tkinter.Toplevel()
-        board.title("Window 2")
-        s1Var = Tkinter.StringVar()
-        s2Var = Tkinter.StringVar()
-        s1Var.set("s1")
-        s2Var.set("s2")
-        square1Label = Tkinter.Label(board,textvariable=s1Var)
-        square1Label.grid(row=0, column=7)
-        square2Label = Tkinter.Label(board,textvariable=s2Var)
-        square2Label.grid(row=0, column=6)
-
+    def setup(self):
+        if self.space_var.get() == 0:
+            self.text_frame()
+            self.q_label.configure(text = 'Question Input')
+            self.a_label.configure(text = 'Answer Input')
+        elif self.space_var.get() == 1:
+            self.text_frame()
+            self.q_label.configure(text = 'Question Viewer')
+            self.a_label.configure(text = 'Answer Checker')
+        
 def main():
     
-    root = Tkinter.Tk()
+    root = tk.Tk()
     #root.geometry('250x150+300+300')
     app = FlashCard(root)
     root.mainloop()

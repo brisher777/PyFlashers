@@ -3,7 +3,7 @@ Created on May 22, 2013
 
 @author: ben
 '''
-from Tkinter import Tk, Frame, Menu
+from tk import Tk, Frame, Menu
 import tkFileDialog
 
 class Example(Frame):

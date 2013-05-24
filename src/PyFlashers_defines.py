@@ -52,7 +52,17 @@ class PyFlasher():
     
     def check_answer(self):
         pass
-        ## this will be for answer comparison
+        '''
+        need original answer and guess @ answer
+        code will look something like this:
+        for i in string'd answer:
+            for j in string' guess:
+                if i == j:
+                    print j
+                else:
+                    print '_' * len(i)
+            
+        '''
         
 
 
