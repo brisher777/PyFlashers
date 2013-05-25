@@ -4,32 +4,8 @@ Created on May 18, 2013
 @author: ben
 
 -- TODO --
-  if a number isn't in a regex of the tree, keep processing new input:
-      else show that number's question/answer
-  decide on user interaction; enter, button, etc...
-  when opening a file, only look for xml
 
 -- END -- 
-
--- LAYOUT -- 
-3 main entry fields for I/O
-    1 number
-    1 question
-    1 answer
-    3 labels, 1 for ea. above
-    1 menu toolbar, write to file and read from file will be handled there
-    
-    
-2 full windows, both derived from a root window or the root window will be input with an option to start regurgitation in a child window
-    1 for input
-          twitter length messages for input?
-    1 for regurgitation
-        for regurg, fill in the blank for the answer and then compare to the original
--- END -- 
-
--- IDEA --
-2 radio buttons, when one is checked, its in input mode else it's in regurg mode.
--- END --
 
 -- IMPLEMENTATION CONCEPT --
 when a field has an entry in it from the user
@@ -43,10 +19,6 @@ either wrong or missing.  If it's completely wrong (else) then tell them they're
 -- NEXT --
 validate entry to 3 digits for number area
 -- END --
-
--- THINGS TO UNFUCK --
-
--- END -- 
 '''
 
 import Tkinter as tk
@@ -113,12 +85,15 @@ class FlashCard(tk.Frame):
         num_display.pack(in_ = toolbar, expand = True, fill = tk.Y)
         
         toolbar.pack(side="top", fill="x")
+        self.text_frame()
+
+    def text_frame(self):
         
         ###############################################################
         ################         text frames            ###############
         ###############################################################
-    def text_frame(self):
-        if self.text_bool == False:
+        
+            self.below_tool = tk.Frame(borderwidth = 1)
             self.text_frame_1 = tk.Frame(borderwidth=1, relief="sunken")
             self.answer_text = tk.Text(height = 5, width = 30, wrap="word", 
                                        background="white", borderwidth=0, 
@@ -134,13 +109,15 @@ class FlashCard(tk.Frame):
             self.question_text.pack(in_= self.text_frame_2, side="left", fill="both", 
                         expand=True)
             
-    
-            self.text_frame_1.pack(side="bottom", fill="both", expand=True)
-            self.text_frame_2.pack(side="bottom", fill="both", expand=True)
+        
+            self.text_frame_1.pack(in_= self.below_tool, side="bottom", fill="both", expand=True)
+            self.text_frame_2.pack(in_ = self.below_tool, side="bottom", fill="both", expand=True)
+            self.below_tool.pack(side = 'top', fill = 'both', expand = True)
             
             ###############################################################
             ################             labels             ###############
             ###############################################################
+            
             self.q_label = tk.Label(self.text_frame_2, 
                                text = 'Question Input', width = 12)
             self.q_label.pack(side = 'left')
@@ -148,9 +125,6 @@ class FlashCard(tk.Frame):
             self.a_label = tk.Label(self.text_frame_1, 
                                text = 'Answer Input', width = 12)
             self.a_label.pack(side = 'left')
-            self.text_bool = True
-        else:
-            pass
         
     def save_as(self):
         file_name = tkFileDialog.asksaveasfilename(parent = self, 
@@ -165,34 +139,43 @@ class FlashCard(tk.Frame):
         file_name = tkFileDialog.askopenfilename(parent = self, 
                                                  title = 'Open file...')
         opened_file = open('%s' % file_name, 'r')
-        #line = opened_file.readlines()
         self.pf_obj = pf.PyFlasher(opened_file)
         self.xml_obj = self.pf_obj.read_xml()
         
     def next(self):
-        temp_display = self.xml_obj.next()
-        
-        self.num_var.set(temp_display[0])
-        
-        self.question_text.delete(1.0, tk.END)
-        self.question_text.insert(tk.END, temp_display[1])
-        
-        self.answer_text.delete(1.0, tk.END)
-        self.answer_text.insert(tk.END, temp_display[2])
-
+        if self.space_var.get() == 0:
+            pass
+        elif self.space_var.get() == 1:
+            temp_display = self.xml_obj.next()
             
+            self.num_var.set(temp_display[0])
+            
+            self.question_text.delete(1.0, tk.END)
+            self.question_text.insert(tk.END, temp_display[1])
+            
+            self.answer_text.delete(1.0, tk.END)
+            self.answer_text.insert(tk.END, temp_display[2])
+
     def setup(self):
         if self.space_var.get() == 0:
+            self.below_tool.destroy()
             self.text_frame()
+            if self.check_ans:
+                self.check_ans.destroy()
             self.q_label.configure(text = 'Question Input')
             self.a_label.configure(text = 'Answer Input')
+            self.a_label.pack(side = 'left')
         elif self.space_var.get() == 1:
+            self.below_tool.destroy()
             self.text_frame()
             self.q_label.configure(text = 'Question Viewer')
             self.a_label.configure(text = 'Answer Checker')
+            self.a_label.pack(side = 'top')
+            self.check_ans = tk.Button(name="checker", text="Compare", 
+                  borderwidth=1)
+            self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom')
         
 def main():
-    
     root = tk.Tk()
     #root.geometry('250x150+300+300')
     app = FlashCard(root)
