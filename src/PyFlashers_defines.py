@@ -11,7 +11,8 @@ import xml.etree.ElementTree as ET
 class PyFlasher():
     def __init__(self, data):
         self.data = data
-        
+        self.tree = ET.parse(self.data)
+        self.root = self.tree.getroot()
         
     
     def build(self, number, question, answer):
@@ -43,12 +44,10 @@ class PyFlasher():
         ## implement random generation of question
         #tree = ET.parse('xml_test.xml')
         #root = tree.getroot()
-        self.tree = ET.parse(self.data)
-        self.root = self.tree.getroot()
         for number in self.root.findall('number'):
             question = number.find('question').text
             answer = number.find('answer').text
-            print question + '\n' + answer
+            yield number.text, question, answer
     
     def check_answer(self):
         pass
@@ -65,8 +64,8 @@ class PyFlasher():
         '''
         
 
-
-monkey = PyFlasher("NULL")
+'''
+monkey = PyFlasher('NULL')
 print 'making an empty list'
 print '==========================================================='
 my_list = []
@@ -86,7 +85,7 @@ print 'passing list of objects to write function for file creation'
 print '==========================================================='
 monkey.write_xml(my_list)
 
-'''
+
 for number in root.findall('number'):
     question = number.find('question').text
     answer = number.find('answer').text

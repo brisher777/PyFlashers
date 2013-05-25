@@ -50,8 +50,9 @@ validate entry to 3 digits for number area
 '''
 
 import Tkinter as tk
-#import PyFlashers_defines
+import PyFlashers_defines as pf
 import tkFileDialog
+import xml.etree.ElementTree as ET
 
 class FlashCard(tk.Frame):
     def __init__(self, parent):
@@ -85,7 +86,7 @@ class FlashCard(tk.Frame):
         toolbar = tk.Frame()
         
         done_next = tk.Button(name="toolbar", text="Next", 
-                              borderwidth=1)#, command=self.OnBold,)
+                              borderwidth=1, command = self.next)
         done_next.pack(in_=toolbar, side="right")
         
         go_to_button = tk.Button(name='go To', text='Go to...',
@@ -104,11 +105,11 @@ class FlashCard(tk.Frame):
                                        indicatoron = 0, command = self.setup)
         reader_button.pack(side='left')
         
-        num_var = tk.StringVar()
+        self.num_var = tk.StringVar()
         num_display = tk.Entry(toolbar, width = 8,
                                          justify = 'center', 
-                                         textvariable = num_var)
-        num_var.set('0')
+                                         textvariable = self.num_var)
+        self.num_var.set('0')
         num_display.pack(in_ = toolbar, expand = True, fill = tk.Y)
         
         toolbar.pack(side="top", fill="x")
@@ -119,18 +120,18 @@ class FlashCard(tk.Frame):
     def text_frame(self):
         if self.text_bool == False:
             self.text_frame_1 = tk.Frame(borderwidth=1, relief="sunken")
-            text_1 = tk.Text(height = 5, width = 30, wrap="word", 
+            self.answer_text = tk.Text(height = 5, width = 30, wrap="word", 
                                        background="white", borderwidth=0, 
                                        highlightthickness=0)
             
             self.text_frame_2 = tk.Frame(borderwidth=1, relief="sunken")
-            text_2 = tk.Text(height = 5, width = 30, wrap="word", 
+            self.question_text = tk.Text(height = 5, width = 30, wrap="word", 
                              background="white", borderwidth=0, 
                              highlightthickness=0)
             
-            text_1.pack(in_= self.text_frame_1, side="left", fill="both", 
+            self.answer_text.pack(in_= self.text_frame_1, side="left", fill="both", 
                         expand=True)
-            text_2.pack(in_= self.text_frame_2, side="left", fill="both", 
+            self.question_text.pack(in_= self.text_frame_2, side="left", fill="both", 
                         expand=True)
             
     
@@ -164,10 +165,21 @@ class FlashCard(tk.Frame):
         file_name = tkFileDialog.askopenfilename(parent = self, 
                                                  title = 'Open file...')
         opened_file = open('%s' % file_name, 'r')
-        line = opened_file.readline()
-        ## check for a non-null file
-        ## open it in the appropriate way
-        print 'you opened a file'
+        #line = opened_file.readlines()
+        self.pf_obj = pf.PyFlasher(opened_file)
+        self.xml_obj = self.pf_obj.read_xml()
+        
+    def next(self):
+        temp_display = self.xml_obj.next()
+        
+        self.num_var.set(temp_display[0])
+        
+        self.question_text.delete(1.0, tk.END)
+        self.question_text.insert(tk.END, temp_display[1])
+        
+        self.answer_text.delete(1.0, tk.END)
+        self.answer_text.insert(tk.END, temp_display[2])
+
             
     def setup(self):
         if self.space_var.get() == 0:
