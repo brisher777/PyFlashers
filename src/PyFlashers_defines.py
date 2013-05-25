@@ -15,17 +15,7 @@ class PyFlasher():
         self.root = self.tree.getroot()
         
     
-    def build(self, number, question, answer):
-        
-        ## build an xml object and return it
-        ## to the caller
-        top = ET.Element('number')
-        top.text = number
-        quest = ET.SubElement(top, 'question')
-        quest.text = question
-        ans = ET.SubElement(top, 'answer')
-        ans.text = answer
-        return top
+
         
     def write_xml(self, obj_list):
         

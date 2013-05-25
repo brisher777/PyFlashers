@@ -4,7 +4,7 @@ Created on May 18, 2013
 @author: ben
 
 -- TODO --
-
+learn how to use an 'enter keystroke' event handler
 -- END -- 
 
 -- IMPLEMENTATION CONCEPT --
@@ -36,7 +36,6 @@ class FlashCard(tk.Frame):
     def initialize(self):
         
         self.parent.title("PyFlashers")
-        self.text_bool = False
         
         ###############################################################
         ################            menu bar            ###############
@@ -62,7 +61,7 @@ class FlashCard(tk.Frame):
         done_next.pack(in_=toolbar, side="right")
         
         go_to_button = tk.Button(name='go To', text='Go to...',
-                                        borderwidth = 1)
+                                        borderwidth = 1, command = self.go_to)
         go_to_button.pack(in_=toolbar, side = 'right')
 
         self.space_var = tk.IntVar()
@@ -93,38 +92,38 @@ class FlashCard(tk.Frame):
         ################         text frames            ###############
         ###############################################################
         
-            self.below_tool = tk.Frame(borderwidth = 1)
-            self.text_frame_1 = tk.Frame(borderwidth=1, relief="sunken")
-            self.answer_text = tk.Text(height = 5, width = 30, wrap="word", 
-                                       background="white", borderwidth=0, 
-                                       highlightthickness=0)
-            
-            self.text_frame_2 = tk.Frame(borderwidth=1, relief="sunken")
-            self.question_text = tk.Text(height = 5, width = 30, wrap="word", 
-                             background="white", borderwidth=0, 
-                             highlightthickness=0)
-            
-            self.answer_text.pack(in_= self.text_frame_1, side="left", fill="both", 
-                        expand=True)
-            self.question_text.pack(in_= self.text_frame_2, side="left", fill="both", 
-                        expand=True)
-            
+        self.below_tool = tk.Frame(borderwidth = 1)
+        self.text_frame_1 = tk.Frame(borderwidth=1, relief="sunken")
+        self.answer_text = tk.Text(height = 5, width = 30, wrap="word", 
+                                   background="white", borderwidth=0, 
+                                   highlightthickness=0)
         
-            self.text_frame_1.pack(in_= self.below_tool, side="bottom", fill="both", expand=True)
-            self.text_frame_2.pack(in_ = self.below_tool, side="bottom", fill="both", expand=True)
-            self.below_tool.pack(side = 'top', fill = 'both', expand = True)
-            
-            ###############################################################
-            ################             labels             ###############
-            ###############################################################
-            
-            self.q_label = tk.Label(self.text_frame_2, 
-                               text = 'Question Input', width = 12)
-            self.q_label.pack(side = 'left')
-            
-            self.a_label = tk.Label(self.text_frame_1, 
-                               text = 'Answer Input', width = 12)
-            self.a_label.pack(side = 'left')
+        self.text_frame_2 = tk.Frame(borderwidth=1, relief="sunken")
+        self.question_text = tk.Text(height = 5, width = 30, wrap="word", 
+                         background="white", borderwidth=0, 
+                         highlightthickness=0)
+        
+        self.answer_text.pack(in_= self.text_frame_1, side="left", fill="both", 
+                    expand=True)
+        self.question_text.pack(in_= self.text_frame_2, side="left", fill="both", 
+                    expand=True)
+        
+    
+        self.text_frame_1.pack(in_= self.below_tool, side="bottom", fill="both", expand=True)
+        self.text_frame_2.pack(in_ = self.below_tool, side="bottom", fill="both", expand=True)
+        self.below_tool.pack(side = 'top', fill = 'both', expand = True)
+        
+        ###############################################################
+        ################             labels             ###############
+        ###############################################################
+        
+        self.q_label = tk.Label(self.text_frame_2, 
+                           text = 'Question Input', width = 12)
+        self.q_label.pack(side = 'left')
+        
+        self.a_label = tk.Label(self.text_frame_1, 
+                           text = 'Answer Input', width = 12)
+        self.a_label.pack(side = 'left')
         
     def save_as(self):
         file_name = tkFileDialog.asksaveasfilename(parent = self, 
@@ -142,29 +141,64 @@ class FlashCard(tk.Frame):
         self.pf_obj = pf.PyFlasher(opened_file)
         self.xml_obj = self.pf_obj.read_xml()
         
+    def go_to(self):
+        
+        ###############################
+        ######    YOURE HERE   ########
+        ###############################
+        print ET.tostring(self.file_list)
+        
     def next(self):
         if self.space_var.get() == 0:
-            pass
-        elif self.space_var.get() == 1:
-            temp_display = self.xml_obj.next()
-            
-            self.num_var.set(temp_display[0])
-            
-            self.question_text.delete(1.0, tk.END)
-            self.question_text.insert(tk.END, temp_display[1])
-            
+            self.file_list = []
+            num = self.num_var.get()
+            question = self.question_text.get(1.0, tk.END)
+            answer = self.answer_text.get(1.0, tk.END)
+            self.file_list.append(self.build(num, question, answer))
+            self.num_var.set(int(num) + 1)
             self.answer_text.delete(1.0, tk.END)
-            self.answer_text.insert(tk.END, temp_display[2])
-
+            self.question_text.delete(1.0, tk.END)
+        elif self.space_var.get() == 1:
+            try:
+                temp_display = self.xml_obj.next()
+                
+                self.num_var.set(temp_display[0])
+                
+                self.question_text.delete(1.0, tk.END)
+                self.question_text.insert(tk.END, temp_display[1])
+                
+                #self.answer_text.delete(1.0, tk.END)
+                #self.answer_text.insert(tk.END, temp_display[2])
+            except AttributeError:
+                self.question_text.delete(1.0, tk.END)
+                self.question_text.insert(1.0, 'hey dummy, open a file first')
+            except StopIteration:
+                self.question_text.delete(1.0, tk.END)
+                self.answer_text.delete(1.0, tk.END)
+                self.question_text.insert(1.0, 'You have reached the end of the file')
+                
+    def build(self, number, question, answer):
+        
+        ## build an xml object and return it
+        ## to the caller
+        top = ET.Element('number')
+        top.text = number
+        quest = ET.SubElement(top, 'question')
+        quest.text = question
+        ans = ET.SubElement(top, 'answer')
+        ans.text = answer
+        return top
+    
     def setup(self):
         if self.space_var.get() == 0:
             self.below_tool.destroy()
             self.text_frame()
-            if self.check_ans:
+            try:
                 self.check_ans.destroy()
-            self.q_label.configure(text = 'Question Input')
-            self.a_label.configure(text = 'Answer Input')
-            self.a_label.pack(side = 'left')
+            except AttributeError:
+                self.q_label.configure(text = 'Question Input')
+                self.a_label.configure(text = 'Answer Input')
+                self.a_label.pack(side = 'left')
         elif self.space_var.get() == 1:
             self.below_tool.destroy()
             self.text_frame()
@@ -173,7 +207,7 @@ class FlashCard(tk.Frame):
             self.a_label.pack(side = 'top')
             self.check_ans = tk.Button(name="checker", text="Compare", 
                   borderwidth=1)
-            self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom')
+            self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom', fill = 'x')
         
 def main():
     root = tk.Tk()
