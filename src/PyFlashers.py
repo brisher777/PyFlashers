@@ -6,8 +6,6 @@ Created on May 18, 2013
 -- TODO --
 learn how to use an 'enter keystroke' event handler
 -- NEXT -- 
-make a help file drop down thingy
--- NEXT -- 
 randomly select slightly insulting messages when a user inputs a wrong statement
 -- END -- 
 
@@ -23,20 +21,10 @@ either wrong or missing.  If it's completely wrong (else) then tell them they're
 -- NEXT --
 validate entry to 3 digits for number area
 -- END --
--- EXAMPLE NOTES -- 
-lists = []
-lists.append(build(11110, 'stuffdsafdsaf', 'anfdsafsafr').iter())
-a_lst = list(lists)
-#list.append(build(1, 'second', 'second_answser'))
-for node in lists:
-    print node.next().text
-    print node.next().text
-    print node.next().tag
 
 '''
 
 import Tkinter as tk
-import PyFlashers_defines as pf
 import tkFileDialog
 import xml.etree.ElementTree as ET
 
@@ -155,16 +143,28 @@ class FlashCard(tk.Frame):
             saved_file.close()
     
     def open_file(self):
-        file_name = tkFileDialog.askopenfilename(parent = self, 
+        self.file_name = tkFileDialog.askopenfilename(parent = self, 
                                                  title = 'Open file...')
-        opened_file = open('%s' % file_name, 'r')
+        opened_file = open('%s' % self.file_name, 'r')
         self.xml_obj = self.read_xml(opened_file)
         
     def go_to(self):
         if self.space_var.get() == 0:
             pass
         elif self.space_var.get() == 1:
-            pass
+            tree = ET.parse(self.file_name)
+            root = tree.getroot()
+            print self.num_var.get() == root.findall('number')
+            print root.find('number').text == self.num_var.get()
+            '''
+            if number[0] == self.num_var.get():
+                self.question_text.delete(1.0, tk.END)
+                self.answer_text.delete(1.0, tk.END)
+                self.num_var.set(number[0])
+                self.question_text.insert(1.0, number[1])
+                self.answer_text.insert(1.0, number[2])
+            ''' 
+                     
         
     def read_xml(self, data):
         tree = ET.parse(data)
@@ -176,6 +176,10 @@ class FlashCard(tk.Frame):
             
     def compare(self):
         pass
+    '''
+        if self.answer_text.get(1.0, tk.END) == get the original answer using the number index:
+            print 'you\'re right'
+    '''
         
             
     def next(self):
@@ -243,7 +247,7 @@ class FlashCard(tk.Frame):
             self.a_label.configure(text = 'Answer Checker')
             self.a_label.pack(side = 'top')
             self.check_ans = tk.Button(name="checker", text="Compare", 
-                  borderwidth=1)
+                  borderwidth=1, command = self.compare)
             self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom', 
                                 fill = 'x')
         
