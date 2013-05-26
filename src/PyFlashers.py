@@ -5,6 +5,10 @@ Created on May 18, 2013
 
 -- TODO --
 learn how to use an 'enter keystroke' event handler
+-- NEXT -- 
+make a help file drop down thingy
+-- NEXT -- 
+randomly select slightly insulting messages when a user inputs a wrong statement
 -- END -- 
 
 -- IMPLEMENTATION CONCEPT --
@@ -19,6 +23,16 @@ either wrong or missing.  If it's completely wrong (else) then tell them they're
 -- NEXT --
 validate entry to 3 digits for number area
 -- END --
+-- EXAMPLE NOTES -- 
+lists = []
+lists.append(build(11110, 'stuffdsafdsaf', 'anfdsafsafr').iter())
+a_lst = list(lists)
+#list.append(build(1, 'second', 'second_answser'))
+for node in lists:
+    print node.next().text
+    print node.next().text
+    print node.next().tag
+
 '''
 
 import Tkinter as tk
@@ -32,9 +46,8 @@ class FlashCard(tk.Frame):
         self.parent = parent        
         self.initialize()
 
-
     def initialize(self):
-        
+        self.file_list = []
         self.parent.title("PyFlashers")
         
         ###############################################################
@@ -46,10 +59,13 @@ class FlashCard(tk.Frame):
 
         file_menu = tk.Menu(menu_bar)
         file_menu.add_command(label = 'Open', command = self.open_file)
-        file_menu.add_command(label = 'Save as...',
-                                   command = self.save_as)
+        file_menu.add_command(label = 'Save as...', command = self.save_as)
         menu_bar.add_cascade(label = 'File', menu = file_menu)
-              
+        
+        help_menu = tk.Menu(menu_bar)
+        help_menu.add_command(label = 'OMG Help!') ## add command later
+        menu_bar.add_cascade(label = 'Help', menu = help_menu)
+             
         ###############################################################
         ################            tool bar            ###############
         ###############################################################
@@ -69,12 +85,12 @@ class FlashCard(tk.Frame):
         create_button = tk.Radiobutton(toolbar, text = 'Creation Station',
                                        variable = self.space_var, value = 0, 
                                        indicatoron = 0, command = self.setup)
-        create_button.pack(side='left')
+        create_button.pack(side='left', fill = 'y')
         
         reader_button = tk.Radiobutton(toolbar, text = 'Reader', 
                                        variable = self.space_var, value = 1, 
                                        indicatoron = 0, command = self.setup)
-        reader_button.pack(side='left')
+        reader_button.pack(side='left', fill = 'y')
         
         self.num_var = tk.StringVar()
         num_display = tk.Entry(toolbar, width = 8,
@@ -103,14 +119,15 @@ class FlashCard(tk.Frame):
                          background="white", borderwidth=0, 
                          highlightthickness=0)
         
-        self.answer_text.pack(in_= self.text_frame_1, side="left", fill="both", 
-                    expand=True)
-        self.question_text.pack(in_= self.text_frame_2, side="left", fill="both", 
-                    expand=True)
+        self.answer_text.pack(in_= self.text_frame_1, side="left", 
+                              fill="both", expand=True)
+        self.question_text.pack(in_= self.text_frame_2, side="left", 
+                                fill="both", expand=True)
         
-    
-        self.text_frame_1.pack(in_= self.below_tool, side="bottom", fill="both", expand=True)
-        self.text_frame_2.pack(in_ = self.below_tool, side="bottom", fill="both", expand=True)
+        self.text_frame_1.pack(in_= self.below_tool, side="bottom", 
+                               fill="both", expand=True)
+        self.text_frame_2.pack(in_ = self.below_tool, side="bottom", 
+                               fill="both", expand=True)
         self.below_tool.pack(side = 'top', fill = 'both', expand = True)
         
         ###############################################################
@@ -121,8 +138,8 @@ class FlashCard(tk.Frame):
                            text = 'Question Input', width = 12)
         self.q_label.pack(side = 'left')
         
-        self.a_label = tk.Label(self.text_frame_1, 
-                           text = 'Answer Input', width = 12)
+        self.a_label = tk.Label(self.text_frame_1, text = 'Answer Input', 
+                                width = 12)
         self.a_label.pack(side = 'left')
         
     def save_as(self):
@@ -130,34 +147,54 @@ class FlashCard(tk.Frame):
                                                    title = 'Save the file as...')
         if len(file_name) > 0:
             saved_file = open('%s' % file_name, 'w')
-            print 'you saved a file'
-            #file.write('you saved a file') ## actually write something relevant later
+            saved_file.write('<?xml version="1.0"?>\n')
+            saved_file.write('<data>')
+            for i in self.file_list:
+                saved_file.write(ET.tostring(i))     
+            saved_file.write('</data>')
             saved_file.close()
-            
+    
     def open_file(self):
         file_name = tkFileDialog.askopenfilename(parent = self, 
                                                  title = 'Open file...')
         opened_file = open('%s' % file_name, 'r')
-        self.pf_obj = pf.PyFlasher(opened_file)
-        self.xml_obj = self.pf_obj.read_xml()
+        self.xml_obj = self.read_xml(opened_file)
         
     def go_to(self):
-        
-        ###############################
-        ######    YOURE HERE   ########
-        ###############################
-        print ET.tostring(self.file_list)
-        
-    def next(self):
         if self.space_var.get() == 0:
-            self.file_list = []
+            pass
+        elif self.space_var.get() == 1:
+            pass
+        
+    def read_xml(self, data):
+        tree = ET.parse(data)
+        root = tree.getroot()
+        for number in root.findall('number'):
+            question = number.find('question').text
+            answer = number.find('answer').text
+            yield number.text, question, answer
+            
+    def compare(self):
+        pass
+        
+            
+    def next(self):
+        
+        if self.space_var.get() == 0:
+            #tree = ET.parse(self.file_list)
+            #root = tree.getroot()
+            
             num = self.num_var.get()
             question = self.question_text.get(1.0, tk.END)
             answer = self.answer_text.get(1.0, tk.END)
-            self.file_list.append(self.build(num, question, answer))
+            ###############################################################
+            ##########  This builds a list of generator objects  ##########
+            ###############################################################
+            self.file_list.append(self.build(num, question, answer))#.iter())
             self.num_var.set(int(num) + 1)
             self.answer_text.delete(1.0, tk.END)
-            self.question_text.delete(1.0, tk.END)
+            self.question_text.delete(1.0, tk.END)   
+            
         elif self.space_var.get() == 1:
             try:
                 temp_display = self.xml_obj.next()
@@ -207,7 +244,8 @@ class FlashCard(tk.Frame):
             self.a_label.pack(side = 'top')
             self.check_ans = tk.Button(name="checker", text="Compare", 
                   borderwidth=1)
-            self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom', fill = 'x')
+            self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom', 
+                                fill = 'x')
         
 def main():
     root = tk.Tk()
