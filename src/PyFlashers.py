@@ -4,7 +4,7 @@ Created on May 18, 2013
 @author: ben
 
 -- TODO --
-learn how to use an 'enter keystroke' event handler and a tab handler
+add <enter> event handler for auto completion
 -- NEXT -- 
 add a help file
 -- END --
@@ -65,7 +65,7 @@ class FlashCard(tk.Frame):
         
         ## variable to keep track of which workspace the user is in
         self.space_var = tk.IntVar()
-        
+        self.space_var.set(0)
         ## radio button to select the workspace for creating 'cards'
         create_button = tk.Radiobutton(toolbar, text = 'Creation Station',
                                        variable = self.space_var, value = 0, 
@@ -87,6 +87,13 @@ class FlashCard(tk.Frame):
         num_display.pack(in_ = toolbar, expand = True, fill = tk.Y)
         
         toolbar.pack(side="top", fill="x")
+        
+        ## specify order that widgets will be tab-cycled through
+        new_order = (create_button, reader_button, num_display, go_to_button, 
+                     done_next)
+        for widget in new_order:
+            widget.lift()
+            
         self.text_frame()
 
     def text_frame(self):
@@ -107,6 +114,8 @@ class FlashCard(tk.Frame):
                                    highlightthickness = 0)
         self.answer_text.pack(in_ = self.text_frame_1, side = 'left',
                       fill = 'both', expand = True)
+        self.answer_text.bind("<Tab>", self.focus_next_window)
+        
         
         ## question text box
         self.text_frame_2 = tk.Frame(borderwidth = 1, relief = 'sunken')
@@ -115,12 +124,18 @@ class FlashCard(tk.Frame):
                                      highlightthickness = 0)
         self.question_text.pack(in_ = self.text_frame_2, side = 'left', 
                                 fill = 'both', expand = True)
+        self.question_text.bind("<Tab>", self.focus_next_window)
         
         self.text_frame_1.pack(in_ = self.below_tool, side = 'bottom', 
                                fill = 'both', expand = True)
         self.text_frame_2.pack(in_ = self.below_tool, side = 'bottom', 
                                fill = 'both', expand = True)
         self.below_tool.pack(side = 'top', fill = 'both', expand = True)
+        
+        ## specify order that widgets will be tab-cycled through
+        new_order = (self.question_text, self.answer_text)
+        for widget in new_order:
+            widget.lift()
         
         ###############################################################
         ################             labels             ###############
@@ -301,13 +316,20 @@ class FlashCard(tk.Frame):
             self.q_label.configure(text = 'Question Viewer')
             self.a_label.configure(text = 'Answer Checker')
             self.a_label.pack(side = 'top')
+            
             ## build the compare button, only necessary in the review
             ## workspace
             self.check_ans = tk.Button(name = 'checker', text = 'Compare', 
                                        borderwidth = 1, command = self.compare)
             self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom', 
                                 fill = 'x')
-        
+            
+
+    def focus_next_window(self, event):
+        event.widget.tk_focusNext().focus()
+        return("break")
+
+
 def main():
     root = tk.Tk()
     app = FlashCard(root)
