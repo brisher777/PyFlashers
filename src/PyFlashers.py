@@ -84,7 +84,7 @@ class FlashCard(tk.Frame):
         num_display = tk.Entry(toolbar, width = 8,
                                          justify = 'center', 
                                          textvariable = self.num_var)
-        self.num_var.set('0')
+        self.num_var.set('1')
         num_display.pack(in_ = toolbar, expand = True, fill = tk.Y)
         
         toolbar.pack(side="top", fill="x")
@@ -149,22 +149,34 @@ class FlashCard(tk.Frame):
         self.xml_obj = self.read_xml(opened_file)
         
     def go_to(self):
-        if self.space_var.get() == 0:
-            pass
-        elif self.space_var.get() == 1:
-            tree = ET.parse(self.file_name)
-            root = tree.getroot()
-            print self.num_var.get() == root.findall('number')
-            print root.find('number').text == self.num_var.get()
-            '''
-            if number[0] == self.num_var.get():
-                self.question_text.delete(1.0, tk.END)
-                self.answer_text.delete(1.0, tk.END)
-                self.num_var.set(number[0])
-                self.question_text.insert(1.0, number[1])
-                self.answer_text.insert(1.0, number[2])
-            ''' 
-                     
+        if int(self.num_var.get()) > 999 or int(self.num_var.get()) < 0:
+            self.question_text.delete(1.0, tk.END)
+            self.answer_text.delete(1.0, tk.END)
+            self.question_text.insert(1.0, 'Let\'s be realistic, shall we?')
+        else:
+            if self.space_var.get() == 0:
+                for node in self.file_list:
+                    if node.text == self.num_var.get():
+                        self.question_text.delete(1.0, tk.END)
+                        self.answer_text.delete(1.0, tk.END)
+                        self.num_var.set(node.text)
+                        self.question_text.insert(1.0, node.find('question').text)
+                        self.answer_text.insert(1.0, node.find('answer').text)
+            elif self.space_var.get() == 1:
+                try:
+                    tree = ET.parse(self.file_name)
+                    root = tree.getroot()
+                    for node in root:
+                        if node.text == self.num_var.get():
+                            self.question_text.delete(1.0, tk.END)
+                            self.answer_text.delete(1.0, tk.END)
+                            self.num_var.set(node.text)
+                            self.question_text.insert(1.0, node.find('question').text)
+                            self.answer_text.insert(1.0, node.find('answer').text)
+                except AttributeError:
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.question_text.insert(1.0, 'Did you open a file?')    
         
     def read_xml(self, data):
         tree = ET.parse(data)

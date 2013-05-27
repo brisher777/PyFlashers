@@ -50,32 +50,76 @@ validate entry to 3 digits for number area
 '''
 
 import Tkinter as tk
-import PyFlashers_defines as pf
 import tkFileDialog
 import xml.etree.ElementTree as ET
 
-def build(number, question, answer):
+def go_to(self):
+    if self.space_var.get() == 0:
+        if int(self.num_var.get()) > 999 or int(self.num_var.get()) < 0:
+            self.question_text.delete(1.0, tk.END)
+            self.answer_text.delete(1.0, tk.END)
+            self.question_text.insert(1.0, 'Let\'s be realistic, shall we?')
+        else:
+            for node in self.file_list:
+                if node.text == self.num_var.get():
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.num_var.set(node.text)
+                    self.question_text.insert(1.0, node.find('question').text)
+                    self.answer_text.insert(1.0, node.find('answer').text)
+        self.file_list
+    elif self.space_var.get() == 1:
+        tree = ET.parse(self.file_name)
+        root = tree.getroot()
+        if int(self.num_var.get()) > 999 or int(self.num_var.get()) < 0:
+            self.question_text.delete(1.0, tk.END)
+            self.answer_text.delete(1.0, tk.END)
+            self.question_text.insert(1.0, 'Let\'s be realistic, shall we?')
+        else:
+            for number in root:
+                if number.text == self.num_var.get():
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.num_var.set(number.text)
+                    self.question_text.insert(1.0, number.find('question').text)
+                    self.answer_text.insert(1.0, number.find('answer').text)
+                else:
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.question_text.insert(1.0, 'Are you sure about that number?')
         
-    ## build an xml object and return it
-    ## to the caller
-    top = ET.Element('number')
-    top.text = number
-    quest = ET.SubElement(top, 'question')
-    quest.text = question
-    ans = ET.SubElement(top, 'answer')
-    ans.text = answer
-    return top
+def go_to(self):
+    if int(self.num_var.get()) > 999 or int(self.num_var.get()) < 0:
+        self.question_text.delete(1.0, tk.END)
+        self.answer_text.delete(1.0, tk.END)
+        self.question_text.insert(1.0, 'Let\'s be realistic, shall we?')
+    else:
+        if self.space_var.get() == 0:
+            for node in self.file_list:
+                if node.text == self.num_var.get():
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.num_var.set(node.text)
+                    self.question_text.insert(1.0, node.find('question').text)
+                    self.answer_text.insert(1.0, node.find('answer').text)
+                else:
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.question_text.insert(1.0, 'Are you sure about that number?')
+        elif self.space_var.get() == 1:
+            tree = ET.parse(self.file_name)
+            root = tree.getroot()
+            for node in root:
+                if node.text == self.num_var.get():
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.num_var.set(node.text)
+                    self.question_text.insert(1.0, node.find('question').text)
+                    self.answer_text.insert(1.0, node.find('answer').text)
+                else:
+                    self.question_text.delete(1.0, tk.END)
+                    self.answer_text.delete(1.0, tk.END)
+                    self.question_text.insert(1.0, 'Are you sure about that number?')
 
-lists = []
-lists.append(build('11110', '1stuffdsafdsaf', '1anfdsafsafr'))
-lists.append(build('21110', '2stuffdsafdsaf', '2anfdsafsafr'))
-lists.append(build('31110', '3stuffdsafdsaf', '3anfdsafsafr'))
-lists.append(build('41110', '4stuffdsafdsaf', '4anfdsafsafr'))
-lists.append(build('551110', '5stuffdsafdsaf', '5anfdsafsafr'))
-lists.append(build('61110', '6stuffdsafdsaf', '6anfdsafsafr'))
-lists.append(build('711110', '7stuffdsafdsaf', '7anfdsafsafr'))
 
 
-print lists
-for i in lists:
-    print ET.tostring(i)
