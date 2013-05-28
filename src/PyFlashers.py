@@ -21,70 +21,79 @@ class FlashCard(tk.Frame):
         self.parent = parent        
         self.initialize()
 
+        
+
     def initialize(self):
         ## empty list for storing created 'cards'
         self.file_list = []
         
         self.parent.title("PyFlashers")
         
+        ## define workspace values to select which workspace the user is 
+        ## using
+        self.WORKSPACE_CREATE = 0
+        self.WORKSPACE_REVIEW = 1
+        
         ## part of entry validation for the number display
         self.valid_command = (self.register(self.validate), '%d', '%i', '%P', \
                          '%s', '%S', '%v', '%V', '%W')
         
-        ###############################################################
-        ################            menu bar            ###############
-        ###############################################################
+        '''
+                                    menu bar
+        '''
             
         menu_bar = tk.Menu(self.parent)
-        self.parent.config(menu = menu_bar)
+        self.parent.config(menu=menu_bar)
 
         file_menu = tk.Menu(menu_bar)
-        file_menu.add_command(label = 'Open', command = self.open_file)
-        file_menu.add_command(label = 'Save as...', command = self.save_as)
-        menu_bar.add_cascade(label = 'File', menu = file_menu)
+        file_menu.add_command(label='Open', command=self.open_file)
+        file_menu.add_command(label='Save as...', command=self.save_as)
+        menu_bar.add_cascade(label='File', menu=file_menu)
         
         help_menu = tk.Menu(menu_bar)
-        help_menu.add_command(label = 'OMG Help!')
-        menu_bar.add_cascade(label = 'Help', menu = help_menu)
+        help_menu.add_command(label='OMG Help!')
+        menu_bar.add_cascade(label='Help', menu=help_menu)
              
-        ###############################################################
-        ################            tool bar            ###############
-        ###############################################################
+        '''
+                                    toolbar
+        '''
         
         toolbar = tk.Frame()
         
         ## next button
-        done_next = tk.Button(name = 'toolbar', text = 'Next', borderwidth = 1, 
-                              command = self.next)
-        done_next.pack(in_ = toolbar, side = 'right')
+        done_next = tk.Button(name='toolbar', text='Next', borderwidth=1, 
+                              command=self.next)
+        done_next.pack(in_=toolbar, side='right')
         
         ## go to button
-        go_to_button = tk.Button(name='go To', text='Go to...', borderwidth = 1, 
-                                 command = self.go_to)
-        go_to_button.pack(in_ = toolbar, side = 'right')
+        go_to_button = tk.Button(name='go To', text='Go to...', borderwidth=1, 
+                                 command=self.go_to)
+        go_to_button.pack(in_=toolbar, side='right')
         
         ## variable to keep track of which workspace the user is in
         self.space_var = tk.IntVar()
-        self.space_var.set(0)
+        self.space_var.set(self.WORKSPACE_CREATE)
         ## radio button to select the workspace for creating 'cards'
-        create_button = tk.Radiobutton(toolbar, text = 'Creation Station',
-                                       variable = self.space_var, value = 0, 
-                                       indicatoron = 0, command = self.setup)
-        create_button.pack(side = 'left', fill = 'y')
+        create_button = tk.Radiobutton(toolbar, text='Creation Station',
+                                       variable=self.space_var, 
+                                       value=self.WORKSPACE_CREATE, 
+                                       indicatoron=0, command=self.setup)
+        create_button.pack(side='left', fill='y')
         
         ## radio button to select the workspace to review 'cards'
-        reader_button = tk.Radiobutton(toolbar, text = 'Reader', 
-                                       variable = self.space_var, value = 1, 
-                                       indicatoron = 0, command = self.setup)
-        reader_button.pack(side='left', fill = 'y')
+        reader_button = tk.Radiobutton(toolbar, text='Reader', 
+                                       variable=self.space_var, 
+                                       value=self.WORKSPACE_REVIEW, 
+                                       indicatoron=0, command=self.setup)
+        reader_button.pack(side='left', fill='y')
         
         ## display for which numbered card the user is working with currently
         self.num_var = tk.StringVar()
-        num_display = tk.Entry(toolbar, width = 8, justify = 'center',
-                               textvariable = self.num_var, validate = 'key',
-                               vcmd = self.valid_command)
+        num_display = tk.Entry(toolbar, width=8, justify='center',
+                               textvariable=self.num_var, validate='key',
+                               vcmd=self.valid_command)
         self.num_var.set('1')
-        num_display.pack(in_ = toolbar, expand = True, fill = tk.Y)
+        num_display.pack(in_=toolbar, expand=True, fill=tk.Y)
         
         toolbar.pack(side="top", fill="x")
         
@@ -98,63 +107,63 @@ class FlashCard(tk.Frame):
 
     def text_frame(self):
         
-        ###############################################################
-        ################         text frames            ###############
-        ###############################################################
+        '''
+                                text frames
+        '''
         
         ## variable of all the widgets below the toolbar
         ## it gets destroyed and redrawn each time the user switches between 
         ## workspaces
-        self.below_tool = tk.Frame(borderwidth = 1)
+        self.below_tool = tk.Frame(borderwidth=1)
         
         ## answer text box
-        self.text_frame_1 = tk.Frame(borderwidth = 1, relief = 'sunken')
-        self.answer_text = tk.Text(height = 5, width = 30, wrap = 'word', 
-                                   background = 'white', borderwidth = 0, 
-                                   highlightthickness = 0)
-        self.answer_text.pack(in_ = self.text_frame_1, side = 'left',
-                      fill = 'both', expand = True)
+        self.text_frame_1 = tk.Frame(borderwidth=1, relief='sunken')
+        self.answer_text = tk.Text(height=5, width=30, wrap='word', 
+                                   background='white', borderwidth=0, 
+                                   highlightthickness=0)
+        self.answer_text.pack(in_=self.text_frame_1, side='left',
+                              fill='both', expand=True)
         self.answer_text.bind("<Tab>", self.focus_next_window)
         
         
         ## question text box
-        self.text_frame_2 = tk.Frame(borderwidth = 1, relief = 'sunken')
-        self.question_text = tk.Text(height = 5, width = 30, wrap = 'word', 
-                                     background = 'white', borderwidth = 0, 
-                                     highlightthickness = 0)
-        self.question_text.pack(in_ = self.text_frame_2, side = 'left', 
-                                fill = 'both', expand = True)
+        self.text_frame_2 = tk.Frame(borderwidth=1, relief='sunken')
+        self.question_text = tk.Text(height=5, width=30, wrap='word', 
+                                     background='white', borderwidth=0, 
+                                     highlightthickness=0)
+        self.question_text.pack(in_=self.text_frame_2, side='left', 
+                                fill='both', expand=True)
         self.question_text.bind("<Tab>", self.focus_next_window)
         
-        self.text_frame_1.pack(in_ = self.below_tool, side = 'bottom', 
-                               fill = 'both', expand = True)
-        self.text_frame_2.pack(in_ = self.below_tool, side = 'bottom', 
-                               fill = 'both', expand = True)
-        self.below_tool.pack(side = 'top', fill = 'both', expand = True)
+        self.text_frame_1.pack(in_=self.below_tool, side='bottom', 
+                               fill='both', expand=True)
+        self.text_frame_2.pack(in_=self.below_tool, side='bottom', 
+                               fill='both', expand=True)
+        self.below_tool.pack(side='top', fill='both', expand=True)
         
         ## specify order that widgets will be tab-cycled through
         new_order = (self.question_text, self.answer_text)
         for widget in new_order:
             widget.lift()
         
-        ###############################################################
-        ################             labels             ###############
-        ###############################################################
+        '''
+                                labels
+        '''
         
-        self.q_label = tk.Label(self.text_frame_2, text = 'Question Input', 
-                                width = 12)
-        self.q_label.pack(side = 'left')
+        self.q_label = tk.Label(self.text_frame_2, text='Question Input', 
+                                width=12)
+        self.q_label.pack(side='left')
         
-        self.a_label = tk.Label(self.text_frame_1, text = 'Answer Input', 
-                                width = 12)
-        self.a_label.pack(side = 'left')
+        self.a_label = tk.Label(self.text_frame_1, text='Answer Input', 
+                                width=12)
+        self.a_label.pack(side='left')
         
     def save_as(self):
-        file_name = tkfd.asksaveasfilename(parent = self, 
-                                           title = 'Save the file as...')
+        file_name = tkfd.asksaveasfilename(parent=self, 
+                                           title='Save the file as...')
         
         ## if the filename isn't blank, build the xml file
-        if len(file_name) > 0:
+        if file_name:
             saved_file = open('%s' % file_name, 'w')
             saved_file.write('<?xml version="1.0"?>\n')
             saved_file.write('<data>')
@@ -164,8 +173,8 @@ class FlashCard(tk.Frame):
             saved_file.close()
     
     def open_file(self):
-        self.file_name = tkfd.askopenfilename(parent = self, 
-                                              title = 'Open file...')
+        self.file_name = tkfd.askopenfilename(parent=self, 
+                                              title='Open file...')
         opened_file = open('%s' % self.file_name, 'r')
         
         ## create an element tree object for use in other places
@@ -173,7 +182,7 @@ class FlashCard(tk.Frame):
         
     def go_to(self):
         ## checks workspace, 0 is for 'card' creation, 1 is for 'card' review
-        if self.space_var.get() == 0:
+        if self.space_var.get() == self.WORKSPACE_CREATE:
             ## finds the entry corresponding to the number displayed and 
             ## displays the qestion and answer
             for node in self.file_list:
@@ -250,14 +259,11 @@ class FlashCard(tk.Frame):
     ## just limiting input to the number field to 3 digits
     def validate(self, action, index, value_if_allowed, prior_value, text, 
                  validation_type, trigger_type, widget_name):
-        if text in '0123456789' and len(value_if_allowed) < 4:
-            return True
-        else:
-            return False
-                
+        return text in '0123456789' and len(value_if_allowed) < 4
+      
     def next(self):
         ## check workspace
-        if self.space_var.get() == 0:
+        if self.space_var.get() == self.WORKSPACE_CREATE:
             ## grab the current number, quesiton, and answer
             num = self.num_var.get()
             question = self.question_text.get(1.0, tk.END)
@@ -297,7 +303,7 @@ class FlashCard(tk.Frame):
     
     def setup(self):
         ## check workspace
-        if self.space_var.get() == 0:
+        if self.space_var.get() == self.WORKSPACE_CREATE:
             ## nuke everything below the toolbar and redraw it
             self.below_tool.destroy()
             self.num_var.set('1')
@@ -305,29 +311,29 @@ class FlashCard(tk.Frame):
             try:
                 self.check_ans.destroy()
             except AttributeError: ## if check answer isn't present
-                self.q_label.configure(text = 'Question Input')
-                self.a_label.configure(text = 'Answer Input')
-                self.a_label.pack(side = 'left')
+                self.q_label.configure(text='Question Input')
+                self.a_label.configure(text='Answer Input')
+                self.a_label.pack(side='left')
         else:
             ## nuke everything below the toolbar and redraw it
             self.below_tool.destroy()
             self.num_var.set('1')
             self.text_frame()
-            self.q_label.configure(text = 'Question Viewer')
-            self.a_label.configure(text = 'Answer Checker')
-            self.a_label.pack(side = 'top')
+            self.q_label.configure(text='Question Viewer')
+            self.a_label.configure(text='Answer Checker')
+            self.a_label.pack(side='top')
             
             ## build the compare button, only necessary in the review
             ## workspace
-            self.check_ans = tk.Button(name = 'checker', text = 'Compare', 
-                                       borderwidth = 1, command = self.compare)
-            self.check_ans.pack(in_ = self.text_frame_1, side = 'bottom', 
-                                fill = 'x')
+            self.check_ans = tk.Button(name='checker', text='Compare', 
+                                       borderwidth=1, command=self.compare)
+            self.check_ans.pack(in_=self.text_frame_1, side='bottom', 
+                                fill='x')
             
 
     def focus_next_window(self, event):
         event.widget.tk_focusNext().focus()
-        return("break")
+        return 'break'
 
 
 def main():
