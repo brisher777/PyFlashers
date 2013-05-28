@@ -294,7 +294,7 @@ class FlashCard(tk.Frame):
             self.text_frame()
             try:
                 self.compare_button.destroy()
-            except AttributeError: ## if check answer isn't present
+            except AttributeError: # if check answer isn't present
                 self.q_label.configure(text='Question Input')
                 self.a_label.configure(text='Answer Input')
                 self.a_label.pack(side='left')
