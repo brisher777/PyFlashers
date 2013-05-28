@@ -24,17 +24,16 @@ class FlashCard(tk.Frame):
         
 
     def initialize(self):
-        ## empty list for storing created 'cards'
+        # empty list for storing created 'cards'
         self.file_list = []
         
         self.parent.title("PyFlashers")
         
-        ## define workspace values to select which workspace the user is 
-        ## using
+        # define workspace values to select which workspace the user is using
         self.WORKSPACE_CREATE = 0
         self.WORKSPACE_REVIEW = 1
         
-        ## part of entry validation for the number display
+        # part of entry validation for the number display
         self.valid_command = (self.register(self.validate), '%d', '%i', '%P', \
                          '%s', '%S', '%v', '%V', '%W')
         
@@ -60,34 +59,32 @@ class FlashCard(tk.Frame):
         
         toolbar = tk.Frame()
         
-        ## next button
-        done_next = tk.Button(name='toolbar', text='Next', borderwidth=1, 
+        next_button = tk.Button(name='toolbar', text='Next', borderwidth=1, 
                               command=self.next)
-        done_next.pack(in_=toolbar, side='right')
+        next_button.pack(in_=toolbar, side='right')
         
-        ## go to button
         go_to_button = tk.Button(name='go To', text='Go to...', borderwidth=1, 
                                  command=self.go_to)
         go_to_button.pack(in_=toolbar, side='right')
         
-        ## variable to keep track of which workspace the user is in
+        # variable to keep track of which workspace the user is in
         self.space_var = tk.IntVar()
         self.space_var.set(self.WORKSPACE_CREATE)
-        ## radio button to select the workspace for creating 'cards'
+        
+        # radio buttons to select the workspace for creating 'cards'
         create_button = tk.Radiobutton(toolbar, text='Creation Station',
                                        variable=self.space_var, 
                                        value=self.WORKSPACE_CREATE, 
                                        indicatoron=0, command=self.setup)
         create_button.pack(side='left', fill='y')
         
-        ## radio button to select the workspace to review 'cards'
         reader_button = tk.Radiobutton(toolbar, text='Reader', 
                                        variable=self.space_var, 
                                        value=self.WORKSPACE_REVIEW, 
                                        indicatoron=0, command=self.setup)
         reader_button.pack(side='left', fill='y')
         
-        ## display for which numbered card the user is working with currently
+        # display for which numbered 'card' the user is working with currently
         self.num_var = tk.StringVar()
         num_display = tk.Entry(toolbar, width=8, justify='center',
                                textvariable=self.num_var, validate='key',
@@ -97,26 +94,23 @@ class FlashCard(tk.Frame):
         
         toolbar.pack(side="top", fill="x")
         
-        ## specify order that widgets will be tab-cycled through
+        # specify order that widgets will be tab-cycled through
         new_order = (create_button, reader_button, num_display, go_to_button, 
-                     done_next)
+                     next_button)
         for widget in new_order:
             widget.lift()
             
         self.text_frame()
 
     def text_frame(self):
-        
         '''
-                                text frames
+        Text frames
+        Variable of all the widgets below the toolbar.
+        It gets destroyed and redrawn each time the user switches between 
+        workspaces
         '''
-        
-        ## variable of all the widgets below the toolbar
-        ## it gets destroyed and redrawn each time the user switches between 
-        ## workspaces
         self.below_tool = tk.Frame(borderwidth=1)
         
-        ## answer text box
         self.text_frame_1 = tk.Frame(borderwidth=1, relief='sunken')
         self.answer_text = tk.Text(height=5, width=30, wrap='word', 
                                    background='white', borderwidth=0, 
@@ -125,8 +119,6 @@ class FlashCard(tk.Frame):
                               fill='both', expand=True)
         self.answer_text.bind("<Tab>", self.focus_next_window)
         
-        
-        ## question text box
         self.text_frame_2 = tk.Frame(borderwidth=1, relief='sunken')
         self.question_text = tk.Text(height=5, width=30, wrap='word', 
                                      background='white', borderwidth=0, 
@@ -141,7 +133,7 @@ class FlashCard(tk.Frame):
                                fill='both', expand=True)
         self.below_tool.pack(side='top', fill='both', expand=True)
         
-        ## specify order that widgets will be tab-cycled through
+        # specify order that widgets will be tab-cycled through
         new_order = (self.question_text, self.answer_text)
         for widget in new_order:
             widget.lift()
@@ -162,7 +154,6 @@ class FlashCard(tk.Frame):
         file_name = tkfd.asksaveasfilename(parent=self, 
                                            title='Save the file as...')
         
-        ## if the filename isn't blank, build the xml file
         if file_name:
             saved_file = open('%s' % file_name, 'w')
             saved_file.write('<?xml version="1.0"?>\n')
@@ -177,14 +168,15 @@ class FlashCard(tk.Frame):
                                               title='Open file...')
         opened_file = open('%s' % self.file_name, 'r')
         
-        ## create an element tree object for use in other places
+        # create an element tree object for use in other places
         self.xml_obj = self.read_xml(opened_file)
         
     def go_to(self):
-        ## checks workspace, 0 is for 'card' creation, 1 is for 'card' review
+        
+        # checks workspace, 0 is for 'card' creation, 1 is for 'card' review
         if self.space_var.get() == self.WORKSPACE_CREATE:
-            ## finds the entry corresponding to the number displayed and 
-            ## displays the qestion and answer
+            # finds the entry corresponding to the number displayed and 
+            # displays the qestion and answer
             for node in self.file_list:
                 if node.text == self.num_var.get():
                     self.question_text.delete(1.0, tk.END)
@@ -192,10 +184,7 @@ class FlashCard(tk.Frame):
                     self.num_var.set(node.text)
                     self.question_text.insert(1.0, node.find('question').text)
                     self.answer_text.insert(1.0, node.find('answer').text)
-        ## checking workspace
         else:
-            ## displays the entry's corresponding question only, since this
-            ## is the review portion of the program
             try:
                 tree = ET.parse(self.file_name)
                 root = tree.getroot()
@@ -210,7 +199,7 @@ class FlashCard(tk.Frame):
                 self.answer_text.delete(1.0, tk.END)
                 self.question_text.insert(1.0, 'Did you open a file?')    
         
-    ## generator function to yield 1 'number' entry from the opened file
+    # generator function to yield 1 'number' entry from the opened file
     def read_xml(self, data):
         tree = ET.parse(data)
         self.root = tree.getroot()
@@ -220,79 +209,75 @@ class FlashCard(tk.Frame):
             yield number.text, question, answer
             
     def compare(self):
-        ## completely wrong answer tracker
+        ''' 
+        Completely wrong answer tracker. The counter is only incremented on 
+        complete or partially correct answers 
+        '''
         counter = 0
         
-        ## grab existing answer before deletion
         user_answer = self.answer_text.get(1.0, tk.END).strip()
         self.answer_text.delete(1.0, tk.END)
-        
-        ## cycle through xml file
-        for node in self.root:
-            ## find the specified entry
-            if node.text == self.num_var.get():
-                ## if the answer is completely right, congratulate and 
-                ## increment the counter
-                if user_answer == node.find('answer').text:
-                    self.answer_text.insert(tk.END, 'Who\'s awesome? You\'re awesome!')
-                    counter += 1
-                ## if the answer isn't completely right, cycle through and 
-                ## display all the correct words that were entered, and 
-                ## blank lines where words were missed.  This can be repeated
-                ## until the answer is completely right
-                else:
-                    for orig_word in re.split('\W+', node.find('answer').text):
-                        for ans_word in re.split('\W+', user_answer):
-                            if orig_word == ans_word:
-                                counter += 1
-                                self.answer_text.insert(tk.END, orig_word + ' ')
-                                break
-                        if orig_word != ans_word:
-                            self.answer_text.insert(tk.END, ('_' * len(orig_word) + ' '))
-                ## counter is only incremented on complete or partial correct 
-                ## answers, so a value of zero will be rewarded with an inspiring 
-                ## message
-                if counter == 0:
-                    self.answer_text.delete(1.0, tk.END)
-                    self.answer_text.insert(tk.END, 'You were completely wrong, suck less next time.')
+        try:
+            for node in self.root:
+                if node.text == self.num_var.get():
+                    if user_answer == node.find('answer').text:
+                        self.answer_text.insert(tk.END, 'Who\'s awesome? You\'re awesome!')
+                        counter += 1
+                        '''
+                        if the answer isn't completely right, cycle through and 
+                        display all the correct words that were entered, and 
+                        blank lines where words were missed.  This can be repeated
+                        until the answer is completely right
+                        '''
+                    else:
+                        for orig_word in re.split('\W+', node.find('answer').text):
+                            for ans_word in re.split('\W+', user_answer):
+                                if orig_word == ans_word:
+                                    counter += 1
+                                    self.answer_text.insert(tk.END, orig_word + ' ')
+                                    break
+                            if orig_word != ans_word:
+                                self.answer_text.insert(tk.END, ('_' * len(orig_word) + ' '))
+                    if counter == 0:
+                        self.answer_text.delete(1.0, tk.END)
+                        self.answer_text.insert(tk.END, 'You were completely wrong, suck less next time.')
+            return 'break'
+        except AttributeError:
+            self.question_text.delete(1.0, tk.END)
+            self.answer_text.delete(1.0, tk.END)
+            self.question_text.insert(1.0, 'Did you open a file?')  
                         
-    ## just limiting input to the number field to 3 digits
     def validate(self, action, index, value_if_allowed, prior_value, text, 
                  validation_type, trigger_type, widget_name):
+        '''limit input to the number field to 3 digits'''
         return text in '0123456789' and len(value_if_allowed) < 4
       
     def next(self):
-        ## check workspace
         if self.space_var.get() == self.WORKSPACE_CREATE:
-            ## grab the current number, quesiton, and answer
             num = self.num_var.get()
             question = self.question_text.get(1.0, tk.END)
             answer = self.answer_text.get(1.0, tk.END)
-            ## append an element tree object to a list
             self.file_list.append(self.build(num, question, answer))
-            ## increment the number
             self.num_var.set(int(num) + 1)
-            ## blank out the entry once it's in the list
             self.answer_text.delete(1.0, tk.END)
             self.question_text.delete(1.0, tk.END)
         else:
-            ## display the next question
             self.answer_text.delete(1.0, tk.END)
             try:
                 temp_display = self.xml_obj.next()
                 self.num_var.set(temp_display[0])
                 self.question_text.delete(1.0, tk.END)
                 self.question_text.insert(tk.END, temp_display[1])
-            except AttributeError: ## no file opened
+            except AttributeError: # no file opened
                 self.question_text.delete(1.0, tk.END)
                 self.question_text.insert(1.0, 'hey dummy, open a file first')
-            except StopIteration: ## no more objects in the generator
+            except StopIteration: # no more objects in the generator
                 self.question_text.delete(1.0, tk.END)
                 self.answer_text.delete(1.0, tk.END)
                 self.question_text.insert(1.0, 'You have reached the end of the file')
-                
+    
     def build(self, number, question, answer):
-        ## build an xml object and return it to the caller
+        ''' build an xml object and return it to the caller '''
         top = ET.Element('number')
         top.text = number
         quest = ET.SubElement(top, 'question')
@@ -302,20 +287,18 @@ class FlashCard(tk.Frame):
         return top
     
     def setup(self):
-        ## check workspace
         if self.space_var.get() == self.WORKSPACE_CREATE:
-            ## nuke everything below the toolbar and redraw it
+            # nuke everything below the toolbar and redraw it
             self.below_tool.destroy()
             self.num_var.set('1')
             self.text_frame()
             try:
-                self.check_ans.destroy()
+                self.compare_button.destroy()
             except AttributeError: ## if check answer isn't present
                 self.q_label.configure(text='Question Input')
                 self.a_label.configure(text='Answer Input')
                 self.a_label.pack(side='left')
         else:
-            ## nuke everything below the toolbar and redraw it
             self.below_tool.destroy()
             self.num_var.set('1')
             self.text_frame()
@@ -323,11 +306,10 @@ class FlashCard(tk.Frame):
             self.a_label.configure(text='Answer Checker')
             self.a_label.pack(side='top')
             
-            ## build the compare button, only necessary in the review
-            ## workspace
-            self.check_ans = tk.Button(name='checker', text='Compare', 
-                                       borderwidth=1, command=self.compare)
-            self.check_ans.pack(in_=self.text_frame_1, side='bottom', 
+            # only necessary in the review workspace
+            self.compare_button = tk.Button(name='checker', text='Compare', 
+                                            borderwidth=1, command=self.compare)
+            self.compare_button.pack(in_=self.text_frame_1, side='bottom', 
                                 fill='x')
             
 
