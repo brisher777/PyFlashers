@@ -24,7 +24,8 @@ class FlashCard(tk.Frame):
         
 
     def initialize(self):
-        # empty list for storing created 'cards'
+        '''Build the initial GUI with creation workspace as the default'''
+        
         self.file_list = []
         
         self.parent.title("PyFlashers")
@@ -103,12 +104,8 @@ class FlashCard(tk.Frame):
         self.text_frame()
 
     def text_frame(self):
-        '''
-        Text frames
-        Variable of all the widgets below the toolbar.
-        It gets destroyed and redrawn each time the user switches between 
-        workspaces
-        '''
+        '''Draws every widget that occurs below the toolbar '''
+        
         self.below_tool = tk.Frame(borderwidth=1)
         
         self.text_frame_1 = tk.Frame(borderwidth=1, relief='sunken')
@@ -151,6 +148,7 @@ class FlashCard(tk.Frame):
         self.a_label.pack(side='left')
         
     def save_as(self):
+        ''' Saves a file in a specific xml format that the program can use later'''
         file_name = tkfd.asksaveasfilename(parent=self, 
                                            title='Save the file as...')
         
@@ -172,11 +170,9 @@ class FlashCard(tk.Frame):
         self.xml_obj = self.read_xml(opened_file)
         
     def go_to(self):
-        
+
         # checks workspace, 0 is for 'card' creation, 1 is for 'card' review
         if self.space_var.get() == self.WORKSPACE_CREATE:
-            # finds the entry corresponding to the number displayed and 
-            # displays the qestion and answer
             for node in self.file_list:
                 if node.text == self.num_var.get():
                     self.question_text.delete(1.0, tk.END)
@@ -209,10 +205,7 @@ class FlashCard(tk.Frame):
             yield number.text, question, answer
             
     def compare(self):
-        ''' 
-        Completely wrong answer tracker. The counter is only incremented on 
-        complete or partially correct answers 
-        '''
+        '''Compares answers given to those in the original file'''
         counter = 0
         
         user_answer = self.answer_text.get(1.0, tk.END).strip()
@@ -287,8 +280,8 @@ class FlashCard(tk.Frame):
         return top
     
     def setup(self):
+        '''Nuke everything below the toolbar and redraw it'''
         if self.space_var.get() == self.WORKSPACE_CREATE:
-            # nuke everything below the toolbar and redraw it
             self.below_tool.destroy()
             self.num_var.set('1')
             self.text_frame()
@@ -312,7 +305,6 @@ class FlashCard(tk.Frame):
             self.compare_button.pack(in_=self.text_frame_1, side='bottom', 
                                 fill='x')
             
-
     def focus_next_window(self, event):
         event.widget.tk_focusNext().focus()
         return 'break'
@@ -322,6 +314,6 @@ def main():
     root = tk.Tk()
     app = FlashCard(root)
     root.mainloop()
-    
+
 if __name__ == '__main__':
     main()
