@@ -7,6 +7,10 @@ Created on May 18, 2013
 add <enter> event handler for auto completion
 -- NEXT -- 
 add a help file
+-- NEXT -- 
+add random functionality to the review workspace
+-- NEXT -- 
+clean up save_as function
 -- END --
 '''
 
@@ -17,7 +21,7 @@ import re
 
 class FlashCard(tk.Frame):
     def __init__(self, parent):
-        tk.Frame.__init__(self, parent)   
+        tk.Frame.__init__(self, parent)
         self.parent = parent        
         self.initialize()
 
@@ -115,6 +119,7 @@ class FlashCard(tk.Frame):
         self.answer_text.pack(in_=self.text_frame_1, side='left',
                               fill='both', expand=True)
         self.answer_text.bind("<Tab>", self.focus_next_window)
+        self.answer_text.bind('<Button-3>',self.right_click, add='')
         
         self.text_frame_2 = tk.Frame(borderwidth=1, relief='sunken')
         self.question_text = tk.Text(height=5, width=30, wrap='word', 
@@ -123,6 +128,7 @@ class FlashCard(tk.Frame):
         self.question_text.pack(in_=self.text_frame_2, side='left', 
                                 fill='both', expand=True)
         self.question_text.bind("<Tab>", self.focus_next_window)
+        self.question_text.bind('<Button-3>',self.right_click, add='')
         
         self.text_frame_1.pack(in_=self.below_tool, side='bottom', 
                                fill='both', expand=True)
@@ -151,16 +157,54 @@ class FlashCard(tk.Frame):
         ''' Saves a file in a specific xml format that the program can use later'''
         file_name = tkfd.asksaveasfilename(parent=self, 
                                            title='Save the file as...')
+        FILE_EXISTS = False
+        shebang = '<?xml version="1.0"?>\n'
         
         if file_name:
-            saved_file = open('%s' % file_name, 'w')
-            saved_file.write('<?xml version="1.0"?>\n')
-            saved_file.write('<data>')
-            for i in self.file_list:
-                saved_file.write(ET.tostring(i))     
-            saved_file.write('</data>')
-            saved_file.close()
-    
+            try:
+                saved_file = open('%s' % file_name, 'r')
+                FILE_EXISTS = True
+            except IOError:
+                saved_file = open('%s' % file_name, 'w')
+                
+            if FILE_EXISTS:
+                lines = saved_file.readlines()
+                lines = lines[:-1]
+                saved_file.close()
+                saved_file = open('%s' % file_name, 'w')
+                if lines != []:
+                    if lines[0] != shebang:
+                        saved_file.write(shebang)
+                        saved_file.write('<data>\n')
+                    for line in lines:
+                        saved_file.write(line)
+                if self.file_list != []:
+                    saved_file.write('</answer></number>\n')
+                    for node in self.file_list:
+                        saved_file.write(ET.tostring(node))
+                saved_file.write('</data>')
+                saved_file.close()
+                tree = ET.parse(file_name)
+                root = tree.getroot()
+                counter = 1
+                for num_node in root:
+                    num_node.text = str(counter)
+                    counter += 1
+                saved_file = open('%s' % file_name, 'w')
+                saved_file.write(shebang)
+                saved_file.write('<data>')
+                for line in root:
+                    saved_file.write(ET.tostring(line))
+                saved_file.write('</data>')
+                saved_file.close()
+            else:
+                saved_file.write(shebang)
+                saved_file.write('<data>')
+                for i in self.file_list:
+                    saved_file.write(ET.tostring(i))     
+                saved_file.write('</data>')
+                saved_file.close()
+
     def open_file(self):
         self.file_name = tkfd.askopenfilename(parent=self, 
                                               title='Open file...')
@@ -208,12 +252,12 @@ class FlashCard(tk.Frame):
         '''Compares answers given to those in the original file'''
         counter = 0
         
-        user_answer = self.answer_text.get(1.0, tk.END).strip()
+        user_answer = self.answer_text.get(1.0, tk.END).strip().lower()
         self.answer_text.delete(1.0, tk.END)
         try:
             for node in self.root:
                 if node.text == self.num_var.get():
-                    if user_answer == node.find('answer').text:
+                    if user_answer == node.find('answer').text.lower():
                         self.answer_text.insert(tk.END, 'Who\'s awesome? You\'re awesome!')
                         counter += 1
                         '''
@@ -225,7 +269,7 @@ class FlashCard(tk.Frame):
                     else:
                         for orig_word in re.split('\W+', node.find('answer').text):
                             for ans_word in re.split('\W+', user_answer):
-                                if orig_word == ans_word:
+                                if orig_word.lower() == ans_word:
                                     counter += 1
                                     self.answer_text.insert(tk.END, orig_word + ' ')
                                     break
@@ -298,17 +342,79 @@ class FlashCard(tk.Frame):
             self.q_label.configure(text='Question Viewer')
             self.a_label.configure(text='Answer Checker')
             self.a_label.pack(side='top')
+            self.q_label.pack(side='top')
             
             # only necessary in the review workspace
             self.compare_button = tk.Button(name='checker', text='Compare', 
                                             borderwidth=1, command=self.compare)
             self.compare_button.pack(in_=self.text_frame_1, side='bottom', 
                                 fill='x')
+            self.show_me_button = tk.Button(name='showme', text='I give up...',
+                                            borderwidth=1, command=self.give_up)
+            self.show_me_button.pack(in_=self.text_frame_2, side='bottom',
+                                     fill='x')
+            new_order = (self.question_text, self.show_me_button,  
+                         self.answer_text, self.compare_button)
+            for widget in new_order:
+                widget.lift()
+    def give_up(self):
+        ''' Give up and display the answer for the viewed question '''
+        self.answer_text.delete(1.0, tk.END)
+        try:
+            for node in self.root:
+                if node.text == self.num_var.get():
+                    self.answer_text.insert(1.0, node.find('answer').text)
+        except AttributeError: # no file opened
+            self.question_text.delete(1.0, tk.END)
+            self.question_text.insert(1.0, 'hey dummy, open a file first')
             
     def focus_next_window(self, event):
+        ''' Aids in tabbing around the program '''
         event.widget.tk_focusNext().focus()
         return 'break'
 
+    def right_click(self, event):
+        ''' right click context menu for all Tk Entry and Text widgets '''
+
+        try:
+            def rclick_copy(event, apnd=0):
+                event.widget.event_generate('<Control-c>')
+    
+            def rclick_cut(event):
+                event.widget.event_generate('<Control-x>')
+    
+            def rclick_paste(event):
+                event.widget.event_generate('<Control-v>')
+    
+            event.widget.focus()
+    
+            nclst=[
+                   (' Cut', lambda event=event: rclick_copy(event)),
+                   (' Copy', lambda event=event: rclick_cut(event)),
+                   (' Paste', lambda event=event: rclick_paste(event)),
+                   ]
+    
+            rmenu = tk.Menu(None, tearoff=0, takefocus=0)
+    
+            for (txt, cmd) in nclst:
+                rmenu.add_command(label=txt, command=cmd)
+    
+            rmenu.tk_popup(event.x_root+40, event.y_root+10, entry='0')
+    
+        except tk.TclError:
+            pass
+    
+        return 'break'
+
+
+    def right_click_binder(self, rclk):
+    
+        try:
+            for box in [ 'Text', 'Entry', 'Listbox', 'Label']: #
+                rclk.bind_class(box, sequence='<Button-3>',
+                             func=self.right_click, add='')
+        except tk.TclError:
+            pass
 
 def main():
     root = tk.Tk()
