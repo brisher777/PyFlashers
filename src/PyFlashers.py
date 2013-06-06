@@ -17,12 +17,16 @@ clean up save_as function
 import Tkinter as tk
 import tkFileDialog as tkfd
 import xml.etree.ElementTree as ET
+from random import choice
 import re
+import tkFont
+import ttk
 
 class FlashCard(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.parent = parent        
+        self.custom_font = tkFont.Font(family='Helvetica', size=16)
         self.initialize()
 
         
@@ -49,13 +53,13 @@ class FlashCard(tk.Frame):
         menu_bar = tk.Menu(self.parent)
         self.parent.config(menu=menu_bar)
 
-        file_menu = tk.Menu(menu_bar)
+        file_menu = tk.Menu(menu_bar, font=self.custom_font)
         file_menu.add_command(label='Open', command=self.open_file)
         file_menu.add_command(label='Save as...', command=self.save_as)
         menu_bar.add_cascade(label='File', menu=file_menu)
         
-        help_menu = tk.Menu(menu_bar)
-        help_menu.add_command(label='OMG Help!')
+        help_menu = tk.Menu(menu_bar, font=self.custom_font)
+        help_menu.add_command(label='OMG Help!', command=self.help_page)
         menu_bar.add_cascade(label='Help', menu=help_menu)
              
         '''
@@ -65,12 +69,13 @@ class FlashCard(tk.Frame):
         toolbar = tk.Frame()
         
         next_button = tk.Button(name='toolbar', text='Next', borderwidth=1, 
-                              command=self.next)
+                              command=self.next, font=self.custom_font)
+        
         next_button.pack(in_=toolbar, side='right')
         
         go_to_button = tk.Button(name='go To', text='Go to...', borderwidth=1, 
-                                 command=self.go_to)
-        go_to_button.pack(in_=toolbar, side='right')
+                                 command=self.go_to, font=self.custom_font)
+        go_to_button.pack(in_=toolbar, side='right', fill='both', expand=True)
         
         # variable to keep track of which workspace the user is in
         self.space_var = tk.IntVar()
@@ -80,20 +85,23 @@ class FlashCard(tk.Frame):
         create_button = tk.Radiobutton(toolbar, text='Creation Station',
                                        variable=self.space_var, 
                                        value=self.WORKSPACE_CREATE, 
-                                       indicatoron=0, command=self.setup)
+                                       indicatoron=0, command=self.setup,
+                                       font=self.custom_font)
         create_button.pack(side='left', fill='y')
         
         reader_button = tk.Radiobutton(toolbar, text='Reader', 
                                        variable=self.space_var, 
                                        value=self.WORKSPACE_REVIEW, 
-                                       indicatoron=0, command=self.setup)
-        reader_button.pack(side='left', fill='y')
+                                       indicatoron=0, command=self.setup,
+                                       font=self.custom_font)
+        reader_button.pack(side='left', fill='both', expand=True)
         
         # display for which numbered 'card' the user is working with currently
         self.num_var = tk.StringVar()
         num_display = tk.Entry(toolbar, width=8, justify='center',
                                textvariable=self.num_var, validate='key',
-                               vcmd=self.valid_command)
+                               vcmd=self.valid_command, font=self.custom_font,
+                               relief='sunken', bd=5)
         self.num_var.set('1')
         num_display.pack(in_=toolbar, expand=True, fill=tk.Y)
         
@@ -115,7 +123,7 @@ class FlashCard(tk.Frame):
         self.text_frame_1 = tk.Frame(borderwidth=1, relief='sunken')
         self.answer_text = tk.Text(height=5, width=30, wrap='word', 
                                    background='white', borderwidth=0, 
-                                   highlightthickness=0)
+                                   highlightthickness=0, font=self.custom_font)
         self.answer_text.pack(in_=self.text_frame_1, side='left',
                               fill='both', expand=True)
         self.answer_text.bind("<Tab>", self.focus_next_window)
@@ -124,7 +132,7 @@ class FlashCard(tk.Frame):
         self.text_frame_2 = tk.Frame(borderwidth=1, relief='sunken')
         self.question_text = tk.Text(height=5, width=30, wrap='word', 
                                      background='white', borderwidth=0, 
-                                     highlightthickness=0)
+                                     highlightthickness=0, font=self.custom_font)
         self.question_text.pack(in_=self.text_frame_2, side='left', 
                                 fill='both', expand=True)
         self.question_text.bind("<Tab>", self.focus_next_window)
@@ -146,12 +154,12 @@ class FlashCard(tk.Frame):
         '''
         
         self.q_label = tk.Label(self.text_frame_2, text='Question Input', 
-                                width=12)
-        self.q_label.pack(side='left')
+                                width=12, font=self.custom_font)
+        self.q_label.pack(side='left', fill='both', expand=True)
         
         self.a_label = tk.Label(self.text_frame_1, text='Answer Input', 
-                                width=12)
-        self.a_label.pack(side='left')
+                                width=12, font=self.custom_font)
+        self.a_label.pack(side='left', fill='both', expand=True)
         
     def save_as(self):
         ''' Saves a file in a specific xml format that the program can use later'''
@@ -334,23 +342,25 @@ class FlashCard(tk.Frame):
             except AttributeError: # if check answer isn't present
                 self.q_label.configure(text='Question Input')
                 self.a_label.configure(text='Answer Input')
-                self.a_label.pack(side='left')
+                self.a_label.pack(side='left', fill='both', expand=True)
         else:
             self.below_tool.destroy()
             self.num_var.set('1')
             self.text_frame()
             self.q_label.configure(text='Question Viewer')
             self.a_label.configure(text='Answer Checker')
-            self.a_label.pack(side='top')
-            self.q_label.pack(side='top')
+            self.a_label.pack(side='top', fill='both', expand=True)
+            self.q_label.pack(side='top', fill='both', expand=True)
             
             # only necessary in the review workspace
             self.compare_button = tk.Button(name='checker', text='Compare', 
-                                            borderwidth=1, command=self.compare)
+                                            borderwidth=1, command=self.compare,
+                                            font=self.custom_font, width=11)
             self.compare_button.pack(in_=self.text_frame_1, side='bottom', 
                                 fill='x')
             self.show_me_button = tk.Button(name='showme', text='I give up...',
-                                            borderwidth=1, command=self.give_up)
+                                            borderwidth=1, command=self.give_up, 
+                                            font=self.custom_font, width=11)
             self.show_me_button.pack(in_=self.text_frame_2, side='bottom',
                                      fill='x')
             new_order = (self.question_text, self.show_me_button,  
@@ -415,6 +425,63 @@ class FlashCard(tk.Frame):
                              func=self.right_click, add='')
         except tk.TclError:
             pass
+        
+    def help_page(self):
+        help_root = tk.Toplevel()
+        help_root.title('Help Page')
+        
+        help_panel = tk.Frame(help_root, name='creation')
+        help_panel.pack(side='top', fill='both', expand='y')
+        
+        notebook = ttk.Notebook(help_panel, name='notebook')
+        notebook.enable_traversal()
+        notebook.pack(fill='both', expand='y', padx=2, pady=3)
+        
+        create_tab = ttk.Frame(notebook, name='create')
+        create_msg = ''' This is the creation message '''
+        create_label = ttk.Label(create_tab, wraplength='4i', justify=tk.LEFT,
+                                 anchor=tk.N, text=create_msg)
+        
+        create_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
+        create_tab.rowconfigure(1, weight=1)
+        create_tab.columnconfigure((0,1), weight=1, uniform=1)
+        
+        reader_tab = ttk.Frame(notebook, name='read')
+        reader_msg = '''This is a slightly longer reader message that will 
+        concern all of my followers for years to come.  Are you still paying 
+        attention?'''
+        reader_label = ttk.Label(reader_tab, wraplength='4i', justify=tk.LEFT,
+                                 anchor=tk.N, text=reader_msg)
+        reader_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
+        reader_tab.rowconfigure(1, weight=1)
+        reader_tab.columnconfigure((0,1), weight=1, uniform=1)
+        
+        comp_tab = ttk.Frame(notebook, name='compare')
+        comp_msg = '''This is a slightly longer reader message that will 
+        concern all of my followers for years to come.  Are you still paying 
+        attention?'''
+        comp_label = ttk.Label(comp_tab, wraplength='4i', justify=tk.LEFT,
+                                 anchor=tk.N, text=comp_msg)
+        reader_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
+        reader_tab.rowconfigure(1, weight=1)
+        reader_tab.columnconfigure((0,1), weight=1, uniform=1)
+        
+        
+        
+        
+        
+        
+        notebook.add(create_tab, text='Creation Station', underline=0, padding=2)
+        notebook.add(reader_tab, text='Reader', underline=0, padding=2)
+        notebook.add(comp_tab, text='Compare', underline=0, padding=2)
+        #creation.pack(notebook)
+        #notebook.pack(help_root)
+        #message = tk.Message(help_root, text=help, width=400)
+        #message.pack()
+        
+        
+        dismiss_button = tk.Button(help_root, text='Okay', command=help_root.destroy)
+        dismiss_button.pack()
 
 def main():
     root = tk.Tk()
