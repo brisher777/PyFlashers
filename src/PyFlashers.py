@@ -4,9 +4,9 @@ Created on May 18, 2013
 @author: ben
 
 -- TODO --
-add <enter> event handler for auto completion
+finish help file
 -- NEXT -- 
-add a help file
+rewrite widgets into ttk format
 -- NEXT -- 
 add random functionality to the review workspace
 -- NEXT -- 
