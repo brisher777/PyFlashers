@@ -10,7 +10,9 @@ rewrite widgets into ttk format
 -- NEXT -- 
 add random functionality to the review workspace
 -- NEXT -- 
-clean up save_as function
+clean up save_as section
+add create_workspace next button smarter and use opened files
+goto needs updating to reflect open files
 -- END --
 '''
 
@@ -26,21 +28,41 @@ class FlashCard(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.parent = parent        
-        self.custom_font = tkFont.Font(family='Helvetica', size=16)
         self.initialize()
-
-        
+        self.default_font = tkFont.Font(family='Century Schoolbook L', size=17)        
+        style = ttk.Style()
+        style.configure('TFrame', bd=4, relief='groove')
+        style.configure('TButton', bd=5, relief='raised')
+        style.theme_settings("default", 
+                            {
+                             ".": {"configure": {"padding": 5, 
+                                                 'font': self.default_font},
+                                   "map": {
+                                           "background": [("active", "skyblue"),
+                                                          ("!disabled", "blue")],
+                                           "fieldbackground": [("!disabled", "red")],
+                                           "foreground": [("focus", "yellow"),
+                                                          ("!disabled", "yellow")]}},
+                             "TNotebook.Tab": {"configure": {"padding": 5, 
+                                                 'font': self.default_font, 'focuscolor': 'yellow'},
+                                   "map": {
+                                           "background": [("active", "skyblue"),
+                                                          ("!disabled", "blue")],
+                                           "fieldbackground": [("!disabled", "green3")],
+                                           "foreground": [("focus", "yellow"),
+                                                          ("!disabled", "yellow")]}}
+                             })
 
     def initialize(self):
         '''Build the initial GUI with creation workspace as the default'''
         
         self.file_list = []
         
-        self.parent.title("PyFlashers")
+        self.custom_font = tkFont.Font(family='Times', size=17)
+        self.label_font = tkFont.Font(family='URW Chancery L', size=16)
+        self.default_font = tkFont.Font(family='Century Schoolbook L', size=17)
         
-        # define workspace values to select which workspace the user is using
-        self.WORKSPACE_CREATE = 0
-        self.WORKSPACE_REVIEW = 1
+        self.parent.title('PyFlashers')
         
         # part of entry validation for the number display
         self.valid_command = (self.register(self.validate), '%d', '%i', '%P', \
@@ -50,116 +72,116 @@ class FlashCard(tk.Frame):
                                     menu bar
         '''
             
-        menu_bar = tk.Menu(self.parent)
+        menu_bar = tk.Menu(self.parent, background='dark blue', 
+                           foreground='yellow', font=self.default_font,
+                           activebackground='skyblue')
         self.parent.config(menu=menu_bar)
 
-        file_menu = tk.Menu(menu_bar, font=self.custom_font)
+        file_menu = tk.Menu(menu_bar, background='dark blue', font=self.default_font,
+                            foreground='yellow', activebackground='skyblue')
         file_menu.add_command(label='Open', command=self.open_file)
         file_menu.add_command(label='Save as...', command=self.save_as)
         menu_bar.add_cascade(label='File', menu=file_menu)
         
-        help_menu = tk.Menu(menu_bar, font=self.custom_font)
+        help_menu = tk.Menu(menu_bar, bg='dark blue',foreground='yellow', 
+                            font=self.default_font, activebackground='skyblue')
         help_menu.add_command(label='OMG Help!', command=self.help_page)
         menu_bar.add_cascade(label='Help', menu=help_menu)
              
         '''
-                                    toolbar
+                                    notebook
         '''
-        
-        toolbar = tk.Frame()
-        
-        next_button = tk.Button(name='toolbar', text='Next', borderwidth=1, 
-                              command=self.next, font=self.custom_font)
-        
-        next_button.pack(in_=toolbar, side='right')
-        
-        go_to_button = tk.Button(name='go To', text='Go to...', borderwidth=1, 
-                                 command=self.go_to, font=self.custom_font)
-        go_to_button.pack(in_=toolbar, side='right', fill='both', expand=True)
-        
-        # variable to keep track of which workspace the user is in
-        self.space_var = tk.IntVar()
-        self.space_var.set(self.WORKSPACE_CREATE)
-        
-        # radio buttons to select the workspace for creating 'cards'
-        create_button = tk.Radiobutton(toolbar, text='Creation Station',
-                                       variable=self.space_var, 
-                                       value=self.WORKSPACE_CREATE, 
-                                       indicatoron=0, command=self.setup,
-                                       font=self.custom_font)
-        create_button.pack(side='left', fill='y')
-        
-        reader_button = tk.Radiobutton(toolbar, text='Reader', 
-                                       variable=self.space_var, 
-                                       value=self.WORKSPACE_REVIEW, 
-                                       indicatoron=0, command=self.setup,
-                                       font=self.custom_font)
-        reader_button.pack(side='left', fill='both', expand=True)
-        
-        # display for which numbered 'card' the user is working with currently
-        self.num_var = tk.StringVar()
-        num_display = tk.Entry(toolbar, width=8, justify='center',
-                               textvariable=self.num_var, validate='key',
-                               vcmd=self.valid_command, font=self.custom_font,
-                               relief='sunken', bd=5)
-        self.num_var.set('1')
-        num_display.pack(in_=toolbar, expand=True, fill=tk.Y)
-        
-        toolbar.pack(side="top", fill="x")
-        
-        # specify order that widgets will be tab-cycled through
-        new_order = (create_button, reader_button, num_display, go_to_button, 
-                     next_button)
-        for widget in new_order:
-            widget.lift()
-            
-        self.text_frame()
+        self.tab_bar = ttk.Frame()
+        self.notebook = ttk.Notebook(self.tab_bar)
+        self.notebook.enable_traversal()
+        self.notebook.pack(in_=self.tab_bar, fill='both', expand='y', padx=2, pady=3)
 
-    def text_frame(self):
-        '''Draws every widget that occurs below the toolbar '''
+        self.create_tab = ttk.Frame(self.notebook, name='creation')
+        self.read_tab = ttk.Frame(self.notebook, name='reader')
         
-        self.below_tool = tk.Frame(borderwidth=1)
+
+        go_to = ttk.Button(self.create_tab, text='Go to...', command=self.go_to)
+        go_to.grid(row=0, column=0, sticky='we')
         
-        self.text_frame_1 = tk.Frame(borderwidth=1, relief='sunken')
-        self.answer_text = tk.Text(height=5, width=30, wrap='word', 
-                                   background='white', borderwidth=0, 
-                                   highlightthickness=0, font=self.custom_font)
-        self.answer_text.pack(in_=self.text_frame_1, side='left',
-                              fill='both', expand=True)
-        self.answer_text.bind("<Tab>", self.focus_next_window)
-        self.answer_text.bind('<Button-3>',self.right_click, add='')
+        self.an_num = tk.StringVar()
+        num_display = tk.Entry(self.create_tab, bd=5, relief='sunken', 
+                               foreground='dark blue', width=8, 
+                               justify='center', textvariable=self.an_num,
+                               validate='key', vcmd=self.valid_command)
+        num_display.grid(row=0, column=1, sticky='ew')
+        self.an_num.set('1')
         
-        self.text_frame_2 = tk.Frame(borderwidth=1, relief='sunken')
-        self.question_text = tk.Text(height=5, width=30, wrap='word', 
-                                     background='white', borderwidth=0, 
-                                     highlightthickness=0, font=self.custom_font)
-        self.question_text.pack(in_=self.text_frame_2, side='left', 
-                                fill='both', expand=True)
-        self.question_text.bind("<Tab>", self.focus_next_window)
-        self.question_text.bind('<Button-3>',self.right_click, add='')
+        next_button = ttk.Button(self.create_tab, text='Next', command=self.next)
+        next_button.grid(row=0, column=2, sticky='nsew')
         
-        self.text_frame_1.pack(in_=self.below_tool, side='bottom', 
-                               fill='both', expand=True)
-        self.text_frame_2.pack(in_=self.below_tool, side='bottom', 
-                               fill='both', expand=True)
-        self.below_tool.pack(side='top', fill='both', expand=True)
+        text_frame_1 = ttk.Frame(self.create_tab)
+        self.cq_text = tk.Text(text_frame_1, height=7, wrap='word', width=45, 
+                                   bg='white', bd=2, highlightthickness=0,
+                                   font=self.custom_font)
+        self.cq_text.pack(in_=text_frame_1)
+        text_frame_1.grid(row=1, column=0, columnspan=3, sticky='nesw')
+        self.cq_text.bind('<Tab>', self.focus_next_window)
+        self.cq_text.bind('<Button-3>', self.right_click, add='')
         
-        # specify order that widgets will be tab-cycled through
-        new_order = (self.question_text, self.answer_text)
-        for widget in new_order:
-            widget.lift()
+        py_label = tk.Label(self.create_tab, text='PyFlashers', bg='blue',
+                            font=self.label_font, foreground='yellow')
+        py_label.grid(row=2, column=1)
         
-        '''
-                                labels
-        '''
+        text_frame_2 = ttk.Frame(self.create_tab)
+        self.ca_text = tk.Text(text_frame_2, height=7, wrap='word', width=45,
+                                bg='white', bd=2, highlightthickness=0,
+                                font=self.custom_font)
+        self.ca_text.pack(in_=text_frame_2)
+        text_frame_2.grid(row=3, column=0, columnspan=3, sticky='snew')
+        self.ca_text.bind('<Tab>', self.focus_next_window)
+        self.ca_text.bind('<Button-3>', self.right_click, add='')
         
-        self.q_label = tk.Label(self.text_frame_2, text='Question Input', 
-                                width=12, font=self.custom_font)
-        self.q_label.pack(side='left', fill='both', expand=True)
+        go_to = ttk.Button(self.read_tab, text='Go to...', command=self.go_to)
+        go_to.grid(row=0, column=0, sticky='we')
         
-        self.a_label = tk.Label(self.text_frame_1, text='Answer Input', 
-                                width=12, font=self.custom_font)
-        self.a_label.pack(side='left', fill='both', expand=True)
+        self.rd_num = tk.StringVar()
+        num_display = tk.Entry(self.read_tab, bd=5, relief='sunken', 
+                               foreground='dark blue', width=8, 
+                               justify='center', textvariable=self.rd_num,
+                               validate='key', vcmd=self.valid_command)
+        num_display.grid(row=0, column=1, sticky='ew')
+        self.rd_num.set('0')
+        
+        next_button = ttk.Button(self.read_tab, text='Next', command=self.next)
+        next_button.grid(row=0, column=2, sticky='nsew')
+        
+        text_frame_1 = ttk.Frame(self.read_tab)
+        self.rq_text = tk.Text(text_frame_1, height=7, wrap='word', width=45, 
+                                   bg='white', bd=2, highlightthickness=0,
+                                   font=self.custom_font)
+        self.rq_text.pack(in_=text_frame_1)
+        text_frame_1.grid(row=1, column=0, columnspan=3, sticky='nesw')
+        self.rq_text.bind('<Tab>', self.focus_next_window)
+        self.rq_text.bind('<Button-3>', self.right_click, add='')
+        
+        give_button = ttk.Button(self.read_tab, text='I give up', command=self.give_up)
+        give_button.grid(row=2, column=0)
+        
+        comp_button = ttk.Button(self.read_tab, text='Compare', command=self.compare)
+        comp_button.grid(row=2, column=2)
+        
+        py_label = tk.Label(self.read_tab, text='PyFlashers', bg='blue',
+                            font=self.label_font, foreground='yellow')
+        py_label.grid(row=2, column=1)
+    
+        text_frame_2 = ttk.Frame(self.read_tab)
+        self.ra_text = tk.Text(text_frame_2, height=7, wrap='word', width=45,
+                                bg='white', bd=2, highlightthickness=0,
+                                font=self.custom_font)
+        self.ra_text.pack(in_=text_frame_2)
+        text_frame_2.grid(row=3, column=0, columnspan=3, sticky='snew')
+        self.ra_text.bind('<Tab>', self.focus_next_window)
+        self.ra_text.bind('<Button-3>', self.right_click, add='')
+        
+        self.notebook.add(self.create_tab, text='Creation Station')
+        self.notebook.add(self.read_tab, text='Reader')
+        self.tab_bar.pack()
+        
         
     def save_as(self):
         ''' Saves a file in a specific xml format that the program can use later'''
@@ -216,41 +238,54 @@ class FlashCard(tk.Frame):
     def open_file(self):
         self.file_name = tkfd.askopenfilename(parent=self, 
                                               title='Open file...')
-        opened_file = open('%s' % self.file_name, 'r')
+        self.opened_file = open('%s' % self.file_name, 'r')
         
         # create an element tree object for use in other places
-        self.xml_obj = self.read_xml(opened_file)
+        self.xml_obj = self.read_xml(self.opened_file)
         
     def go_to(self):
-
-        # checks workspace, 0 is for 'card' creation, 1 is for 'card' review
-        if self.space_var.get() == self.WORKSPACE_CREATE:
-            for node in self.file_list:
-                if node.text == self.num_var.get():
-                    self.question_text.delete(1.0, tk.END)
-                    self.answer_text.delete(1.0, tk.END)
-                    self.num_var.set(node.text)
-                    self.question_text.insert(1.0, node.find('question').text)
-                    self.answer_text.insert(1.0, node.find('answer').text)
+        workspace = str(self.focus_get())
+        
+        if 'creation' in workspace:
+            try:
+                tree = ET.parse(self.file_name)
+                root = tree.getroot()
+                for num in root.findall('number'):
+                    if num.text == self.an_num.get():
+                        self.cq_text.delete(1.0, tk.END)
+                        self.ca_text.delete(1.0, tk.END)
+                        self.an_num.set(num.text)
+                        self.cq_text.insert(1.0, num.find('question').text)
+                        self.ca_text.insert(1.0, num.find('answer').text)
+            except AttributeError:
+                print 'its shut'
+                for node in self.file_list:
+                    if node.text == self.an_num.get():
+                        self.cq_text.delete(1.0, tk.END)
+                        self.ca_text.delete(1.0, tk.END)
+                        self.an_num.set(node.text)
+                        self.cq_text.insert(1.0, node.find('question').text)
+                        self.ca_text.insert(1.0, node.find('answer').text)
         else:
             try:
                 tree = ET.parse(self.file_name)
                 root = tree.getroot()
                 for node in root:
-                    if node.text == self.num_var.get():
-                        self.question_text.delete(1.0, tk.END)
-                        self.answer_text.delete(1.0, tk.END)
-                        self.num_var.set(node.text)
-                        self.question_text.insert(1.0, node.find('question').text)
+                    if node.text == self.rd_num.get():
+                        self.rq_text.delete(1.0, tk.END)
+                        self.ra_text.delete(1.0, tk.END)
+                        self.rd_num.set(node.text)
+                        self.rq_text.insert(1.0, node.find('question').text)
             except AttributeError:
-                self.question_text.delete(1.0, tk.END)
-                self.answer_text.delete(1.0, tk.END)
-                self.question_text.insert(1.0, 'Did you open a file?')    
+                self.rq_text.delete(1.0, tk.END)
+                self.ra_text.delete(1.0, tk.END)
+                self.rq_text.insert(1.0, 'Did you open a file?')    
         
     # generator function to yield 1 'number' entry from the opened file
     def read_xml(self, data):
         tree = ET.parse(data)
         self.root = tree.getroot()
+        
         for number in self.root.findall('number'):
             question = number.find('question').text
             answer = number.find('answer').text
@@ -260,13 +295,13 @@ class FlashCard(tk.Frame):
         '''Compares answers given to those in the original file'''
         counter = 0
         
-        user_answer = self.answer_text.get(1.0, tk.END).strip().lower()
-        self.answer_text.delete(1.0, tk.END)
+        user_answer = self.ra_text.get(1.0, tk.END).strip().lower()
+        self.ra_text.delete(1.0, tk.END)
         try:
             for node in self.root:
-                if node.text == self.num_var.get():
+                if node.text == self.rd_num.get():
                     if user_answer == node.find('answer').text.lower():
-                        self.answer_text.insert(tk.END, 'Who\'s awesome? You\'re awesome!')
+                        self.ra_text.insert(tk.END, 'Who\'s awesome? You\'re awesome!')
                         counter += 1
                         '''
                         if the answer isn't completely right, cycle through and 
@@ -279,18 +314,18 @@ class FlashCard(tk.Frame):
                             for ans_word in re.split('\W+', user_answer):
                                 if orig_word.lower() == ans_word:
                                     counter += 1
-                                    self.answer_text.insert(tk.END, orig_word + ' ')
+                                    self.ra_text.insert(tk.END, orig_word + ' ')
                                     break
                             if orig_word != ans_word:
-                                self.answer_text.insert(tk.END, ('_' * len(orig_word) + ' '))
+                                self.ra_text.insert(tk.END, ('_' * len(orig_word) + ' '))
                     if counter == 0:
-                        self.answer_text.delete(1.0, tk.END)
-                        self.answer_text.insert(tk.END, 'You were completely wrong, suck less next time.')
+                        self.ra_text.delete(1.0, tk.END)
+                        self.ra_text.insert(tk.END, 'You were completely wrong, suck less next time.')
             return 'break'
         except AttributeError:
-            self.question_text.delete(1.0, tk.END)
-            self.answer_text.delete(1.0, tk.END)
-            self.question_text.insert(1.0, 'Did you open a file?')  
+            self.rq_text.delete(1.0, tk.END)
+            self.ra_text.delete(1.0, tk.END)
+            self.rq_text.insert(1.0, 'Did you open a file?')  
                         
     def validate(self, action, index, value_if_allowed, prior_value, text, 
                  validation_type, trigger_type, widget_name):
@@ -298,29 +333,43 @@ class FlashCard(tk.Frame):
         return text in '0123456789' and len(value_if_allowed) < 4
       
     def next(self):
-        if self.space_var.get() == self.WORKSPACE_CREATE:
-            num = self.num_var.get()
-            question = self.question_text.get(1.0, tk.END)
-            answer = self.answer_text.get(1.0, tk.END)
-            self.file_list.append(self.build(num, question, answer))
-            self.num_var.set(int(num) + 1)
-            self.answer_text.delete(1.0, tk.END)
-            self.question_text.delete(1.0, tk.END)
+        
+        
+        workspace = str(self.focus_get())
+        if 'creation' in workspace:
+            try:
+                tree = ET.parse(self.opened_file)
+                root = tree.getroot()
+                nums = []
+                for num in root.findall('number'):
+                    nums.append(num.text)
+                next_max = int(max(nums)) + 1
+                self.an_num.set(str(next_max))
+            except AttributeError:
+                num = self.an_num.get()
+                question = self.cq_text.get(1.0, tk.END)
+                answer = self.ca_text.get(1.0, tk.END)
+                self.file_list.append(self.build(num, question, answer))
+                self.an_num.set(int(num) + 1)
+                self.ca_text.delete(1.0, tk.END)
+                self.cq_text.delete(1.0, tk.END)
+            
         else:
-            self.answer_text.delete(1.0, tk.END)
+            self.ra_text.delete(1.0, tk.END)
             try:
                 temp_display = self.xml_obj.next()
-                self.num_var.set(temp_display[0])
-                self.question_text.delete(1.0, tk.END)
-                self.question_text.insert(tk.END, temp_display[1])
+                print temp_display[0]
+                self.rd_num.set(temp_display[0])
+                self.rq_text.delete(1.0, tk.END)
+                self.rq_text.insert(tk.END, temp_display[1])
             except AttributeError: # no file opened
-                self.question_text.delete(1.0, tk.END)
-                self.question_text.insert(1.0, 'hey dummy, open a file first')
+                self.rq_text.delete(1.0, tk.END)
+                self.rq_text.insert(1.0, 'hey dummy, open a file first')
             except StopIteration: # no more objects in the generator
-                self.question_text.delete(1.0, tk.END)
-                self.answer_text.delete(1.0, tk.END)
-                self.question_text.insert(1.0, 'You have reached the end of the file')
-    
+                self.rq_text.delete(1.0, tk.END)
+                self.ra_text.delete(1.0, tk.END)
+                self.rq_text.insert(1.0, 'You have reached the end of the file')
+            
     def build(self, number, question, answer):
         ''' build an xml object and return it to the caller '''
         top = ET.Element('number')
@@ -331,52 +380,16 @@ class FlashCard(tk.Frame):
         ans.text = answer
         return top
     
-    def setup(self):
-        '''Nuke everything below the toolbar and redraw it'''
-        if self.space_var.get() == self.WORKSPACE_CREATE:
-            self.below_tool.destroy()
-            self.num_var.set('1')
-            self.text_frame()
-            try:
-                self.compare_button.destroy()
-            except AttributeError: # if check answer isn't present
-                self.q_label.configure(text='Question Input')
-                self.a_label.configure(text='Answer Input')
-                self.a_label.pack(side='left', fill='both', expand=True)
-        else:
-            self.below_tool.destroy()
-            self.num_var.set('1')
-            self.text_frame()
-            self.q_label.configure(text='Question Viewer')
-            self.a_label.configure(text='Answer Checker')
-            self.a_label.pack(side='top', fill='both', expand=True)
-            self.q_label.pack(side='top', fill='both', expand=True)
-            
-            # only necessary in the review workspace
-            self.compare_button = tk.Button(name='checker', text='Compare', 
-                                            borderwidth=1, command=self.compare,
-                                            font=self.custom_font, width=11)
-            self.compare_button.pack(in_=self.text_frame_1, side='bottom', 
-                                fill='x')
-            self.show_me_button = tk.Button(name='showme', text='I give up...',
-                                            borderwidth=1, command=self.give_up, 
-                                            font=self.custom_font, width=11)
-            self.show_me_button.pack(in_=self.text_frame_2, side='bottom',
-                                     fill='x')
-            new_order = (self.question_text, self.show_me_button,  
-                         self.answer_text, self.compare_button)
-            for widget in new_order:
-                widget.lift()
     def give_up(self):
         ''' Give up and display the answer for the viewed question '''
-        self.answer_text.delete(1.0, tk.END)
+        self.ra_text.delete(1.0, tk.END)
         try:
             for node in self.root:
-                if node.text == self.num_var.get():
-                    self.answer_text.insert(1.0, node.find('answer').text)
+                if node.text == self.rd_num.get():
+                    self.ra_text.insert(1.0, node.find('answer').text)
         except AttributeError: # no file opened
-            self.question_text.delete(1.0, tk.END)
-            self.question_text.insert(1.0, 'hey dummy, open a file first')
+            self.rq_text.delete(1.0, tk.END)
+            self.rq_text.insert(1.0, 'hey dummy, open a file first')
             
     def focus_next_window(self, event):
         ''' Aids in tabbing around the program '''
@@ -465,22 +478,12 @@ class FlashCard(tk.Frame):
         reader_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
         reader_tab.rowconfigure(1, weight=1)
         reader_tab.columnconfigure((0,1), weight=1, uniform=1)
-        
-        
-        
-        
-        
-        
+
         notebook.add(create_tab, text='Creation Station', underline=0, padding=2)
         notebook.add(reader_tab, text='Reader', underline=0, padding=2)
         notebook.add(comp_tab, text='Compare', underline=0, padding=2)
-        #creation.pack(notebook)
-        #notebook.pack(help_root)
-        #message = tk.Message(help_root, text=help, width=400)
-        #message.pack()
         
-        
-        dismiss_button = tk.Button(help_root, text='Okay', command=help_root.destroy)
+        dismiss_button = ttk.Button(help_root, text='Okay', command=help_root.destroy)
         dismiss_button.pack()
 
 def main():
