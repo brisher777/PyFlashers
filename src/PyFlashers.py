@@ -58,6 +58,8 @@ class FlashCard(tk.Frame):
         
         self.file_list = []
         
+        self.FILE_EXISTS = False
+        
         self.custom_font = tkFont.Font(family='Times', size=17)
         self.label_font = tkFont.Font(family='URW Chancery L', size=16)
         self.default_font = tkFont.Font(family='Century Schoolbook L', size=17)
@@ -241,6 +243,7 @@ class FlashCard(tk.Frame):
         self.opened_file = open('%s' % self.file_name, 'r')
         
         # create an element tree object for use in other places
+        self.FILE_EXISTS = True
         self.xml_obj = self.read_xml(self.opened_file)
         
     def go_to(self):
@@ -333,18 +336,32 @@ class FlashCard(tk.Frame):
         return text in '0123456789' and len(value_if_allowed) < 4
       
     def next(self):
-        
-        
         workspace = str(self.focus_get())
         if 'creation' in workspace:
+            if self.FILE_EXISTS == 'proceed':
+                num = self.an_num.get()
+                question = self.cq_text.get(1.0, tk.END)
+                answer = self.ca_text.get(1.0, tk.END)
+                self.file_list.append(self.build(num, question, answer))
+                self.an_num.set(int(num) + 1)
+                self.ca_text.delete(1.0, tk.END)
+                self.cq_text.delete(1.0, tk.END)
             try:
-                tree = ET.parse(self.opened_file)
-                root = tree.getroot()
-                nums = []
-                for num in root.findall('number'):
-                    nums.append(num.text)
-                next_max = int(max(nums)) + 1
-                self.an_num.set(str(next_max))
+                if self.FILE_EXISTS == True:
+                    tree = ET.parse(self.file_name)
+                    root = tree.getroot()
+                    
+                    nums = []
+                    for num in root.findall('number'):
+                        nums.append(num.text)
+                    next_max = int(max(nums)) + 1
+                    question = self.cq_text.get(1.0, tk.END)
+                    answer = self.ca_text.get(1.0, tk.END)
+                    self.file_list.append(self.build(str(next_max), question, answer))
+                    self.an_num.set(int(next_max) + 1)
+                    self.ca_text.delete(1.0, tk.END)
+                    self.cq_text.delete(1.0, tk.END)
+                    self.FILE_EXISTS = 'proceed'
             except AttributeError:
                 num = self.an_num.get()
                 question = self.cq_text.get(1.0, tk.END)
@@ -358,7 +375,6 @@ class FlashCard(tk.Frame):
             self.ra_text.delete(1.0, tk.END)
             try:
                 temp_display = self.xml_obj.next()
-                print temp_display[0]
                 self.rd_num.set(temp_display[0])
                 self.rq_text.delete(1.0, tk.END)
                 self.rq_text.insert(tk.END, temp_display[1])
