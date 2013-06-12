@@ -6,20 +6,18 @@ Created on May 18, 2013
 -- TODO --
 finish help file
 -- NEXT -- 
-rewrite widgets into ttk format
+make tkfiledialog text color not yellow 
 -- NEXT -- 
 add random functionality to the review workspace
 -- NEXT -- 
-clean up save_as section
-add create_workspace next button smarter and use opened files
-goto needs updating to reflect open files
+clean up save_as section (may not need renumbering with smarter buttons)
 -- END --
 '''
 
 import Tkinter as tk
 import tkFileDialog as tkfd
 import xml.etree.ElementTree as ET
-from random import choice
+#from random import choice
 import re
 import tkFont
 import ttk
@@ -59,6 +57,7 @@ class FlashCard(tk.Frame):
         self.file_list = []
         
         self.FILE_EXISTS = False
+        self.GOTO_USED = False
         
         self.custom_font = tkFont.Font(family='Times', size=17)
         self.label_font = tkFont.Font(family='URW Chancery L', size=16)
@@ -253,6 +252,7 @@ class FlashCard(tk.Frame):
             try:
                 tree = ET.parse(self.file_name)
                 root = tree.getroot()
+                self.GOTO_USED = True
                 for num in root.findall('number'):
                     if num.text == self.an_num.get():
                         self.cq_text.delete(1.0, tk.END)
@@ -260,8 +260,8 @@ class FlashCard(tk.Frame):
                         self.an_num.set(num.text)
                         self.cq_text.insert(1.0, num.find('question').text)
                         self.ca_text.insert(1.0, num.find('answer').text)
+                        
             except AttributeError:
-                print 'its shut'
                 for node in self.file_list:
                     if node.text == self.an_num.get():
                         self.cq_text.delete(1.0, tk.END)
@@ -339,13 +339,34 @@ class FlashCard(tk.Frame):
         workspace = str(self.focus_get())
         if 'creation' in workspace:
             if self.FILE_EXISTS == 'proceed':
-                num = self.an_num.get()
-                question = self.cq_text.get(1.0, tk.END)
-                answer = self.ca_text.get(1.0, tk.END)
-                self.file_list.append(self.build(num, question, answer))
-                self.an_num.set(int(num) + 1)
-                self.ca_text.delete(1.0, tk.END)
-                self.cq_text.delete(1.0, tk.END)
+                if self.GOTO_USED == True:
+                    ''' sanity check to not let the user overwrite entries '''
+                    temp_list = []
+                    for i in self.file_list:
+                        match = re.search('\d+', ET.tostring(i))
+                        temp_list.append(match.group(0))
+                    max_from_file_list = int(max(temp_list)) + 1
+                    
+                    tree = ET.parse(self.file_name)
+                    root = tree.getroot()
+                    nums = []
+                    for num in root.findall('number'):
+                        nums.append(num.text)
+                    max_from_open_file = int(max(nums)) + 1
+                    
+                    if max_from_open_file > max_from_file_list:
+                        self.an_num.set(str(max_from_open_file))
+                    else:
+                        self.an_num.set(str(max_from_file_list))
+                    self.GOTO_USED = False
+                else:
+                    num = self.an_num.get()
+                    question = self.cq_text.get(1.0, tk.END)
+                    answer = self.ca_text.get(1.0, tk.END)
+                    self.file_list.append(self.build(num, question, answer))
+                    self.an_num.set(int(num) + 1)
+                    self.ca_text.delete(1.0, tk.END)
+                    self.cq_text.delete(1.0, tk.END)
             try:
                 if self.FILE_EXISTS == True:
                     tree = ET.parse(self.file_name)
