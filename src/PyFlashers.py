@@ -6,8 +6,6 @@ Created on May 18, 2013
 -- TODO --
 finish help file
 -- NEXT -- 
-make tkfiledialog text color not yellow 
--- NEXT -- 
 add random functionality to the review workspace
 -- NEXT -- 
 Go To empty file needs a try / catch
