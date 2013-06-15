@@ -10,6 +10,10 @@ make tkfiledialog text color not yellow
 -- NEXT -- 
 add random functionality to the review workspace
 -- NEXT -- 
+Go To empty file needs a try / catch
+-- NEXT --
+make it only save as an xml file and open only xml files
+-- NEXT -- 
 clean up save_as section (may not need renumbering with smarter buttons)
 -- END --
 '''
@@ -26,31 +30,12 @@ class FlashCard(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.parent = parent        
-        self.initialize()
+        self.custom_font = tkFont.Font(family='Times', size=17)
+        self.label_font = tkFont.Font(family='URW Chancery L', size=16)
         self.default_font = tkFont.Font(family='Century Schoolbook L', size=17)        
-        style = ttk.Style()
-        style.configure('TFrame', bd=4, relief='groove')
-        style.configure('TButton', bd=5, relief='raised')
-        style.theme_settings("default", 
-                            {
-                             ".": {"configure": {"padding": 5, 
-                                                 'font': self.default_font},
-                                   "map": {
-                                           "background": [("active", "skyblue"),
-                                                          ("!disabled", "blue")],
-                                           "fieldbackground": [("!disabled", "red")],
-                                           "foreground": [("focus", "yellow"),
-                                                          ("!disabled", "yellow")]}},
-                             "TNotebook.Tab": {"configure": {"padding": 5, 
-                                                 'font': self.default_font, 'focuscolor': 'yellow'},
-                                   "map": {
-                                           "background": [("active", "skyblue"),
-                                                          ("!disabled", "blue")],
-                                           "fieldbackground": [("!disabled", "green3")],
-                                           "foreground": [("focus", "yellow"),
-                                                          ("!disabled", "yellow")]}}
-                             })
-
+        self.style = ttk.Style()
+        self.initialize()
+        
     def initialize(self):
         '''Build the initial GUI with creation workspace as the default'''
         
@@ -59,9 +44,16 @@ class FlashCard(tk.Frame):
         self.FILE_EXISTS = False
         self.GOTO_USED = False
         
-        self.custom_font = tkFont.Font(family='Times', size=17)
-        self.label_font = tkFont.Font(family='URW Chancery L', size=16)
-        self.default_font = tkFont.Font(family='Century Schoolbook L', size=17)
+        #make things beautimous
+        self.style.configure('Blue.TFrame', background='blue')
+        self.style.configure('Blue.TNotebook', background='blue')
+        self.style.configure('Blue.TButton', foreground='yellow',
+                             font=self.default_font)
+        self.style.map('Blue.TButton', background= [("active", "skyblue"),
+                                                    ("!disabled", "blue")])
+        self.style.configure('Blue.TNotebook.Tab', background='blue', font=self.label_font)
+        self.style.map('Blue.TNotebook.Tab', background= [("active", "skyblue"),
+                                                          ("!disabled", "blue")])
         
         self.parent.title('PyFlashers')
         
@@ -72,7 +64,7 @@ class FlashCard(tk.Frame):
         '''
                                     menu bar
         '''
-            
+        
         menu_bar = tk.Menu(self.parent, background='dark blue', 
                            foreground='yellow', font=self.default_font,
                            activebackground='skyblue')
@@ -92,16 +84,19 @@ class FlashCard(tk.Frame):
         '''
                                     notebook
         '''
-        self.tab_bar = ttk.Frame()
-        self.notebook = ttk.Notebook(self.tab_bar)
+        
+        self.tab_bar = ttk.Frame(style='Blue.TFrame')
+        self.notebook = ttk.Notebook(self.tab_bar, style='Blue.TNotebook')
         self.notebook.enable_traversal()
         self.notebook.pack(in_=self.tab_bar, fill='both', expand='y', padx=2, pady=3)
 
-        self.create_tab = ttk.Frame(self.notebook, name='creation')
-        self.read_tab = ttk.Frame(self.notebook, name='reader')
+        self.create_tab = ttk.Frame(self.notebook, name='creation', style='Blue.TFrame')
+        self.read_tab = ttk.Frame(self.notebook, name='reader',style='Blue.TFrame')
         
-
-        go_to = ttk.Button(self.create_tab, text='Go to...', command=self.go_to)
+        
+        
+        
+        go_to = ttk.Button(self.create_tab, text='Go to...', command=self.go_to, style='Blue.TButton')
         go_to.grid(row=0, column=0, sticky='we')
         
         self.an_num = tk.StringVar()
@@ -112,10 +107,10 @@ class FlashCard(tk.Frame):
         num_display.grid(row=0, column=1, sticky='ew')
         self.an_num.set('1')
         
-        next_button = ttk.Button(self.create_tab, text='Next', command=self.next)
+        next_button = ttk.Button(self.create_tab, text='Next', command=self.next, style='Blue.TButton')
         next_button.grid(row=0, column=2, sticky='nsew')
         
-        text_frame_1 = ttk.Frame(self.create_tab)
+        text_frame_1 = ttk.Frame(self.create_tab, style='Blue.TFrame')
         self.cq_text = tk.Text(text_frame_1, height=7, wrap='word', width=45, 
                                    bg='white', bd=2, highlightthickness=0,
                                    font=self.custom_font)
@@ -125,10 +120,10 @@ class FlashCard(tk.Frame):
         self.cq_text.bind('<Button-3>', self.right_click, add='')
         
         py_label = tk.Label(self.create_tab, text='PyFlashers', bg='blue',
-                            font=self.label_font, foreground='yellow')
+                            font=self.label_font, foreground='yellow', height=2)
         py_label.grid(row=2, column=1)
         
-        text_frame_2 = ttk.Frame(self.create_tab)
+        text_frame_2 = ttk.Frame(self.create_tab, style='Blue.TFrame')
         self.ca_text = tk.Text(text_frame_2, height=7, wrap='word', width=45,
                                 bg='white', bd=2, highlightthickness=0,
                                 font=self.custom_font)
@@ -137,7 +132,7 @@ class FlashCard(tk.Frame):
         self.ca_text.bind('<Tab>', self.focus_next_window)
         self.ca_text.bind('<Button-3>', self.right_click, add='')
         
-        go_to = ttk.Button(self.read_tab, text='Go to...', command=self.go_to)
+        go_to = ttk.Button(self.read_tab, text='Go to...', command=self.go_to, style='Blue.TButton')
         go_to.grid(row=0, column=0, sticky='we')
         
         self.rd_num = tk.StringVar()
@@ -148,10 +143,10 @@ class FlashCard(tk.Frame):
         num_display.grid(row=0, column=1, sticky='ew')
         self.rd_num.set('0')
         
-        next_button = ttk.Button(self.read_tab, text='Next', command=self.next)
+        next_button = ttk.Button(self.read_tab, text='Next', command=self.next, style='Blue.TButton')
         next_button.grid(row=0, column=2, sticky='nsew')
         
-        text_frame_1 = ttk.Frame(self.read_tab)
+        text_frame_1 = ttk.Frame(self.read_tab, style='Blue.TFrame')
         self.rq_text = tk.Text(text_frame_1, height=7, wrap='word', width=45, 
                                    bg='white', bd=2, highlightthickness=0,
                                    font=self.custom_font)
@@ -160,17 +155,17 @@ class FlashCard(tk.Frame):
         self.rq_text.bind('<Tab>', self.focus_next_window)
         self.rq_text.bind('<Button-3>', self.right_click, add='')
         
-        give_button = ttk.Button(self.read_tab, text='I give up', command=self.give_up)
-        give_button.grid(row=2, column=0)
+        give_button = ttk.Button(self.read_tab, text='I give up', command=self.give_up, style='Blue.TButton')
+        give_button.grid(row=2, column=0, sticky='news')
         
-        comp_button = ttk.Button(self.read_tab, text='Compare', command=self.compare)
-        comp_button.grid(row=2, column=2)
+        comp_button = ttk.Button(self.read_tab, text='Compare', command=self.compare, style='Blue.TButton')
+        comp_button.grid(row=2, column=2, sticky='news')
         
         py_label = tk.Label(self.read_tab, text='PyFlashers', bg='blue',
-                            font=self.label_font, foreground='yellow')
+                            font=self.label_font, foreground='yellow', height=2)
         py_label.grid(row=2, column=1)
     
-        text_frame_2 = ttk.Frame(self.read_tab)
+        text_frame_2 = ttk.Frame(self.read_tab, style='Blue.TFrame')
         self.ra_text = tk.Text(text_frame_2, height=7, wrap='word', width=45,
                                 bg='white', bd=2, highlightthickness=0,
                                 font=self.custom_font)
@@ -237,8 +232,7 @@ class FlashCard(tk.Frame):
                 saved_file.close()
 
     def open_file(self):
-        self.file_name = tkfd.askopenfilename(parent=self, 
-                                              title='Open file...')
+        self.file_name = tkfd.askopenfilename(parent=self, title='Open file...')
         self.opened_file = open('%s' % self.file_name, 'r')
         
         # create an element tree object for use in other places
@@ -367,6 +361,14 @@ class FlashCard(tk.Frame):
                     self.an_num.set(int(num) + 1)
                     self.ca_text.delete(1.0, tk.END)
                     self.cq_text.delete(1.0, tk.END)
+            else:
+                num = self.an_num.get()
+                question = self.cq_text.get(1.0, tk.END)
+                answer = self.ca_text.get(1.0, tk.END)
+                self.file_list.append(self.build(num, question, answer))
+                self.an_num.set(int(num) + 1)
+                self.ca_text.delete(1.0, tk.END)
+                self.cq_text.delete(1.0, tk.END)
             try:
                 if self.FILE_EXISTS == True:
                     tree = ET.parse(self.file_name)
