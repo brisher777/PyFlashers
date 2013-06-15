@@ -6,27 +6,25 @@ Created on May 18, 2013
 -- TODO --
 finish help file
 -- NEXT -- 
-add random functionality to the review workspace
--- NEXT -- 
 clean up save_as section (may not need renumbering with smarter buttons)
 -- END --
 '''
 
 import Tkinter as tk
-import tkFileDialog as tkfd
+from tkFileDialog import askopenfilename, asksaveasfilename
 import xml.etree.ElementTree as ET
-#from random import choice
-import re
-import tkFont
+from random import randrange
+from re import split, search
+from tkFont import Font
 import ttk
 
 class FlashCard(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.parent = parent        
-        self.custom_font = tkFont.Font(family='Times', size=17)
-        self.label_font = tkFont.Font(family='URW Chancery L', size=16)
-        self.default_font = tkFont.Font(family='Century Schoolbook L', size=17)        
+        self.custom_font = Font(family='Times', size=17)
+        self.label_font = Font(family='URW Chancery L', size=16)
+        self.default_font = Font(family='Century Schoolbook L', size=17)        
         self.style = ttk.Style()
         self.initialize()
         
@@ -35,6 +33,7 @@ class FlashCard(tk.Frame):
         
         self.file_list = []
         
+        self.GATE_OPEN = True
         self.FILE_EXISTS = False
         self.GOTO_USED = False
         
@@ -182,7 +181,7 @@ class FlashCard(tk.Frame):
         
     def save_as(self):
         ''' Saves a file in a specific xml format that the program can use later '''
-        file_name = tkfd.asksaveasfilename(parent=self, 
+        file_name = asksaveasfilename(parent=self, 
                                            title='Save the file as...',
                                            filetypes=[('xml files', '.xml'),
                                                          ('all files', '.*')])
@@ -235,14 +234,24 @@ class FlashCard(tk.Frame):
                 saved_file.close()
 
     def open_file(self):
-        self.file_name = tkfd.askopenfilename(parent=self, title='Open file...',
+        self.file_name = askopenfilename(parent=self, title='Open file...',
                                               filetypes=[('xml files', '.xml'),
                                                          ('all files', '.*')])
         self.opened_file = open('%s' % self.file_name, 'r')
         
         # create an element tree object for use in other places
         self.FILE_EXISTS = True
+        
         self.xml_obj = self.read_xml(self.opened_file)
+        
+    def random_number(self):
+        if self.GATE_OPEN:
+            self.temp_counter = 0
+            for number in self.xml_obj:
+                self.temp_counter += 1
+            self.temp_counter += 1
+            self.GATE_OPEN = False
+        return randrange(1, self.temp_counter, 1)
         
     def go_to(self):
         workspace = str(self.focus_get())
@@ -312,8 +321,8 @@ class FlashCard(tk.Frame):
                         until the answer is completely right
                         '''
                     else:
-                        for orig_word in re.split('\W+', node.find('answer').text):
-                            for ans_word in re.split('\W+', user_answer):
+                        for orig_word in split('\W+', node.find('answer').text):
+                            for ans_word in split('\W+', user_answer):
                                 if orig_word.lower() == ans_word:
                                     counter += 1
                                     self.ra_text.insert(tk.END, orig_word + ' ')
@@ -342,7 +351,7 @@ class FlashCard(tk.Frame):
                     ''' sanity check to not let the user overwrite entries '''
                     temp_list = []
                     for i in self.file_list:
-                        match = re.search('\d+', ET.tostring(i))
+                        match = search('\d+', ET.tostring(i))
                         temp_list.append(match.group(0))
                     max_from_file_list = int(max(temp_list)) + 1
                     
@@ -402,10 +411,15 @@ class FlashCard(tk.Frame):
         else:
             self.ra_text.delete(1.0, tk.END)
             try:
-                temp_display = self.xml_obj.next()
-                self.rd_num.set(temp_display[0])
-                self.rq_text.delete(1.0, tk.END)
-                self.rq_text.insert(tk.END, temp_display[1])
+                random_num = self.random_number()
+                tree = ET.parse(self.file_name)
+                root = tree.getroot()
+                for num in root.findall('number'):                    
+                    if num.text == str(random_num):
+                        self.rq_text.delete(1.0, tk.END)
+                        self.ra_text.delete(1.0, tk.END)
+                        self.rd_num.set(num.text)
+                        self.rq_text.insert(1.0, num.find('question').text)
             except AttributeError: # no file opened
                 self.rq_text.delete(1.0, tk.END)
                 self.rq_text.insert(1.0, 'hey dummy, open a file first')
