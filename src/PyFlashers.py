@@ -8,10 +8,6 @@ finish help file
 -- NEXT -- 
 add random functionality to the review workspace
 -- NEXT -- 
-Go To empty file needs a try / catch
--- NEXT --
-make it only save as an xml file and open only xml files
--- NEXT -- 
 clean up save_as section (may not need renumbering with smarter buttons)
 -- END --
 '''
@@ -49,7 +45,8 @@ class FlashCard(tk.Frame):
                              font=self.default_font)
         self.style.map('Blue.TButton', background= [("active", "skyblue"),
                                                     ("!disabled", "blue")])
-        self.style.configure('Blue.TNotebook.Tab', background='blue', font=self.label_font)
+        self.style.configure('Blue.TNotebook.Tab', background='blue', 
+                             font=self.label_font, foreground='yellow')
         self.style.map('Blue.TNotebook.Tab', background= [("active", "skyblue"),
                                                           ("!disabled", "blue")])
         
@@ -94,7 +91,8 @@ class FlashCard(tk.Frame):
         
         
         
-        go_to = ttk.Button(self.create_tab, text='Go to...', command=self.go_to, style='Blue.TButton')
+        go_to = ttk.Button(self.create_tab, text='Go to...', command=self.go_to, 
+                           style='Blue.TButton')
         go_to.grid(row=0, column=0, sticky='we')
         
         self.an_num = tk.StringVar()
@@ -105,7 +103,8 @@ class FlashCard(tk.Frame):
         num_display.grid(row=0, column=1, sticky='ew')
         self.an_num.set('1')
         
-        next_button = ttk.Button(self.create_tab, text='Next', command=self.next, style='Blue.TButton')
+        next_button = ttk.Button(self.create_tab, text='Next', command=self.next,
+                                 style='Blue.TButton')
         next_button.grid(row=0, column=2, sticky='nsew')
         
         text_frame_1 = ttk.Frame(self.create_tab, style='Blue.TFrame')
@@ -130,7 +129,8 @@ class FlashCard(tk.Frame):
         self.ca_text.bind('<Tab>', self.focus_next_window)
         self.ca_text.bind('<Button-3>', self.right_click, add='')
         
-        go_to = ttk.Button(self.read_tab, text='Go to...', command=self.go_to, style='Blue.TButton')
+        go_to = ttk.Button(self.read_tab, text='Go to...', 
+                           command=self.go_to, style='Blue.TButton')
         go_to.grid(row=0, column=0, sticky='we')
         
         self.rd_num = tk.StringVar()
@@ -141,7 +141,8 @@ class FlashCard(tk.Frame):
         num_display.grid(row=0, column=1, sticky='ew')
         self.rd_num.set('0')
         
-        next_button = ttk.Button(self.read_tab, text='Next', command=self.next, style='Blue.TButton')
+        next_button = ttk.Button(self.read_tab, text='Next', 
+                                 command=self.next, style='Blue.TButton')
         next_button.grid(row=0, column=2, sticky='nsew')
         
         text_frame_1 = ttk.Frame(self.read_tab, style='Blue.TFrame')
@@ -153,10 +154,12 @@ class FlashCard(tk.Frame):
         self.rq_text.bind('<Tab>', self.focus_next_window)
         self.rq_text.bind('<Button-3>', self.right_click, add='')
         
-        give_button = ttk.Button(self.read_tab, text='I give up', command=self.give_up, style='Blue.TButton')
+        give_button = ttk.Button(self.read_tab, text='I give up', 
+                                 command=self.give_up, style='Blue.TButton')
         give_button.grid(row=2, column=0, sticky='news')
         
-        comp_button = ttk.Button(self.read_tab, text='Compare', command=self.compare, style='Blue.TButton')
+        comp_button = ttk.Button(self.read_tab, text='Compare', 
+                                 command=self.compare, style='Blue.TButton')
         comp_button.grid(row=2, column=2, sticky='news')
         
         py_label = tk.Label(self.read_tab, text='PyFlashers', bg='blue',
@@ -178,9 +181,11 @@ class FlashCard(tk.Frame):
         
         
     def save_as(self):
-        ''' Saves a file in a specific xml format that the program can use later'''
+        ''' Saves a file in a specific xml format that the program can use later '''
         file_name = tkfd.asksaveasfilename(parent=self, 
-                                           title='Save the file as...')
+                                           title='Save the file as...',
+                                           filetypes=[('xml files', '.xml'),
+                                                         ('all files', '.*')])
         FILE_EXISTS = False
         shebang = '<?xml version="1.0"?>\n'
         
@@ -230,7 +235,9 @@ class FlashCard(tk.Frame):
                 saved_file.close()
 
     def open_file(self):
-        self.file_name = tkfd.askopenfilename(parent=self, title='Open file...')
+        self.file_name = tkfd.askopenfilename(parent=self, title='Open file...',
+                                              filetypes=[('xml files', '.xml'),
+                                                         ('all files', '.*')])
         self.opened_file = open('%s' % self.file_name, 'r')
         
         # create an element tree object for use in other places
@@ -520,7 +527,8 @@ class FlashCard(tk.Frame):
         notebook.add(reader_tab, text='Reader', underline=0, padding=2)
         notebook.add(comp_tab, text='Compare', underline=0, padding=2)
         
-        dismiss_button = ttk.Button(help_root, text='Okay', command=help_root.destroy)
+        dismiss_button = ttk.Button(help_root, text='Okay', 
+                                    command=help_root.destroy)
         dismiss_button.pack()
 
 def main():
