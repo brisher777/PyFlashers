@@ -6,6 +6,8 @@ Created on May 18, 2013
 -- TODO --
 finish help file
 -- NEXT -- 
+fix help menu formatting
+-- NEXT -- 
 clean up save_as section (may not need renumbering with smarter buttons)
 -- END --
 '''
@@ -36,18 +38,26 @@ class FlashCard(tk.Frame):
         self.GATE_OPEN = True
         self.FILE_EXISTS = False
         self.GOTO_USED = False
+        self.IS_RANDOM = tk.BooleanVar()
         
         #make things beautimous
         self.style.configure('Blue.TFrame', background='blue')
         self.style.configure('Blue.TNotebook', background='blue')
         self.style.configure('Blue.TButton', foreground='yellow',
                              font=self.default_font)
-        self.style.map('Blue.TButton', background= [("active", "skyblue"),
-                                                    ("!disabled", "blue")])
         self.style.configure('Blue.TNotebook.Tab', background='blue', 
                              font=self.label_font, foreground='yellow')
+        self.style.configure('Blue.TCheckbutton', font=self.label_font, 
+                             foreground='yellow')
+        self.style.configure('Blue.TLabel', font=self.custom_font,
+                             foreground='yellow', background='blue')
+        self.style.map('Blue.TButton', background= [("active", "skyblue"),
+                                                    ("!disabled", "blue")])
         self.style.map('Blue.TNotebook.Tab', background= [("active", "skyblue"),
                                                           ("!disabled", "blue")])
+        self.style.map('Blue.TCheckbutton', background=[("active", "skyblue"),
+                                                          ("!disabled", "blue")],
+                                            indicatorcolor=[('selected', 'skyblue')])
         
         self.parent.title('PyFlashers')
         
@@ -70,10 +80,12 @@ class FlashCard(tk.Frame):
         file_menu.add_command(label='Save as...', command=self.save_as)
         menu_bar.add_cascade(label='File', menu=file_menu)
         
+        
         help_menu = tk.Menu(menu_bar, bg='dark blue',foreground='yellow', 
                             font=self.default_font, activebackground='skyblue')
         help_menu.add_command(label='OMG Help!', command=self.help_page)
         menu_bar.add_cascade(label='Help', menu=help_menu)
+        
              
         '''
                                     notebook
@@ -86,9 +98,6 @@ class FlashCard(tk.Frame):
 
         self.create_tab = ttk.Frame(self.notebook, name='creation', style='Blue.TFrame')
         self.read_tab = ttk.Frame(self.notebook, name='reader',style='Blue.TFrame')
-        
-        
-        
         
         go_to = ttk.Button(self.create_tab, text='Go to...', command=self.go_to, 
                            style='Blue.TButton')
@@ -116,7 +125,7 @@ class FlashCard(tk.Frame):
         self.cq_text.bind('<Button-3>', self.right_click, add='')
         
         py_label = tk.Label(self.create_tab, text='PyFlashers', bg='blue',
-                            font=self.label_font, foreground='yellow', height=2)
+                            font=('URW Chancery L', 21), foreground='yellow')
         py_label.grid(row=2, column=1)
         
         text_frame_2 = ttk.Frame(self.create_tab, style='Blue.TFrame')
@@ -142,7 +151,7 @@ class FlashCard(tk.Frame):
         
         next_button = ttk.Button(self.read_tab, text='Next', 
                                  command=self.next, style='Blue.TButton')
-        next_button.grid(row=0, column=2, sticky='nsew')
+        next_button.grid(row=0, column=2, sticky='news')
         
         text_frame_1 = ttk.Frame(self.read_tab, style='Blue.TFrame')
         self.rq_text = tk.Text(text_frame_1, height=7, wrap='word', width=45, 
@@ -153,7 +162,7 @@ class FlashCard(tk.Frame):
         self.rq_text.bind('<Tab>', self.focus_next_window)
         self.rq_text.bind('<Button-3>', self.right_click, add='')
         
-        give_button = ttk.Button(self.read_tab, text='I give up', 
+        give_button = ttk.Button(self.read_tab, text='I give up',
                                  command=self.give_up, style='Blue.TButton')
         give_button.grid(row=2, column=0, sticky='news')
         
@@ -161,10 +170,12 @@ class FlashCard(tk.Frame):
                                  command=self.compare, style='Blue.TButton')
         comp_button.grid(row=2, column=2, sticky='news')
         
-        py_label = tk.Label(self.read_tab, text='PyFlashers', bg='blue',
-                            font=self.label_font, foreground='yellow', height=2)
-        py_label.grid(row=2, column=1)
-    
+        
+        random_check = ttk.Checkbutton(self.read_tab, text='Randomize',
+                                       style='Blue.TCheckbutton', 
+                                       variable=self.IS_RANDOM)
+        random_check.grid(row=2, column=1)
+        
         text_frame_2 = ttk.Frame(self.read_tab, style='Blue.TFrame')
         self.ra_text = tk.Text(text_frame_2, height=7, wrap='word', width=45,
                                 bg='white', bd=2, highlightthickness=0,
@@ -177,7 +188,6 @@ class FlashCard(tk.Frame):
         self.notebook.add(self.create_tab, text='Creation Station')
         self.notebook.add(self.read_tab, text='Reader')
         self.tab_bar.pack()
-        
         
     def save_as(self):
         ''' Saves a file in a specific xml format that the program can use later '''
@@ -234,28 +244,35 @@ class FlashCard(tk.Frame):
                 saved_file.close()
 
     def open_file(self):
+        ''' opens a file for use by the program, prefers xml files '''
+        
         self.file_name = askopenfilename(parent=self, title='Open file...',
                                               filetypes=[('xml files', '.xml'),
                                                          ('all files', '.*')])
         self.opened_file = open('%s' % self.file_name, 'r')
         
-        # create an element tree object for use in other places
         self.FILE_EXISTS = True
         
         self.xml_obj = self.read_xml(self.opened_file)
         
+        self.random_tracker = []
+        self.next_counter = 0
+        self.temp_display = []
+        for iter in self.xml_obj:
+            self.temp_display.append(iter)
+        
     def random_number(self):
+        ''' helper function to aid in random review '''
+        
         if self.GATE_OPEN:
-            self.temp_counter = 0
-            for number in self.xml_obj:
-                self.temp_counter += 1
-            self.temp_counter += 1
+            self.temp_counter = len(self.temp_display) + 1
             self.GATE_OPEN = False
         return randrange(1, self.temp_counter, 1)
         
     def go_to(self):
-        workspace = str(self.focus_get())
+        ''' specify which entry to jump to '''
         
+        workspace = str(self.focus_get())
         if 'creation' in workspace:
             try:
                 tree = ET.parse(self.file_name)
@@ -411,19 +428,34 @@ class FlashCard(tk.Frame):
         else:
             self.ra_text.delete(1.0, tk.END)
             try:
-                random_num = self.random_number()
-                tree = ET.parse(self.file_name)
-                root = tree.getroot()
-                for num in root.findall('number'):                    
-                    if num.text == str(random_num):
+                if self.IS_RANDOM.get() == 1:
+                    random_num = self.random_number()
+                    try:
+                        if random_num not in self.random_tracker:
+                            self.random_tracker.append(random_num)
+                            tree = ET.parse(self.file_name)
+                            root = tree.getroot()
+                            for num in root.findall('number'):                    
+                                if num.text == str(random_num):
+                                    self.rq_text.delete(1.0, tk.END)
+                                    self.ra_text.delete(1.0, tk.END)
+                                    self.rd_num.set(num.text)
+                                    self.rq_text.insert(1.0, num.find('question').text)
+                        else:
+                            self.next()
+                    except RuntimeError:
                         self.rq_text.delete(1.0, tk.END)
                         self.ra_text.delete(1.0, tk.END)
-                        self.rd_num.set(num.text)
-                        self.rq_text.insert(1.0, num.find('question').text)
+                        self.rq_text.insert(1.0, 'You have reached the end of the file')
+                else:
+                    self.rd_num.set(self.temp_display[self.next_counter][0])
+                    self.rq_text.delete(1.0, tk.END)
+                    self.rq_text.insert(tk.END, self.temp_display[self.next_counter][1])
+                    self.next_counter += 1
             except AttributeError: # no file opened
                 self.rq_text.delete(1.0, tk.END)
                 self.rq_text.insert(1.0, 'hey dummy, open a file first')
-            except StopIteration: # no more objects in the generator
+            except (StopIteration, IndexError): # no more objects in the generator or list
                 self.rq_text.delete(1.0, tk.END)
                 self.ra_text.delete(1.0, tk.END)
                 self.rq_text.insert(1.0, 'You have reached the end of the file')
@@ -498,26 +530,26 @@ class FlashCard(tk.Frame):
             pass
         
     def help_page(self):
-        help_root = tk.Toplevel()
+        help_root = tk.Toplevel(background='dark blue')
         help_root.title('Help Page')
         
-        help_panel = tk.Frame(help_root, name='creation')
+        help_panel = ttk.Frame(help_root, name='creation', style='Blue.TFrame')
         help_panel.pack(side='top', fill='both', expand='y')
         
-        notebook = ttk.Notebook(help_panel, name='notebook')
+        notebook = ttk.Notebook(help_panel, name='notebook', style='Blue.TNotebook')
         notebook.enable_traversal()
         notebook.pack(fill='both', expand='y', padx=2, pady=3)
         
-        create_tab = ttk.Frame(notebook, name='create')
+        create_tab = ttk.Frame(notebook, name='create', style='Blue.TFrame')
         create_msg = ''' This is the creation message '''
         create_label = ttk.Label(create_tab, wraplength='4i', justify=tk.LEFT,
-                                 anchor=tk.N, text=create_msg)
+                                 anchor=tk.N, text=create_msg, style='Blue.TLabel')
         
         create_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
         create_tab.rowconfigure(1, weight=1)
         create_tab.columnconfigure((0,1), weight=1, uniform=1)
         
-        reader_tab = ttk.Frame(notebook, name='read')
+        reader_tab = ttk.Frame(notebook, name='read', style='Blue.TFrame')
         reader_msg = '''This is a slightly longer reader message that will 
         concern all of my followers for years to come.  Are you still paying 
         attention?'''
@@ -527,7 +559,7 @@ class FlashCard(tk.Frame):
         reader_tab.rowconfigure(1, weight=1)
         reader_tab.columnconfigure((0,1), weight=1, uniform=1)
         
-        comp_tab = ttk.Frame(notebook, name='compare')
+        comp_tab = ttk.Frame(notebook, name='compare', style='Blue.TFrame')
         comp_msg = '''This is a slightly longer reader message that will 
         concern all of my followers for years to come.  Are you still paying 
         attention?'''
@@ -541,7 +573,7 @@ class FlashCard(tk.Frame):
         notebook.add(reader_tab, text='Reader', underline=0, padding=2)
         notebook.add(comp_tab, text='Compare', underline=0, padding=2)
         
-        dismiss_button = ttk.Button(help_root, text='Okay', 
+        dismiss_button = ttk.Button(help_root, text='Okay', style='Blue.TButton', 
                                     command=help_root.destroy)
         dismiss_button.pack()
 
