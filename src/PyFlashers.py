@@ -4,11 +4,7 @@ Created on May 18, 2013
 @author: ben
 
 -- TODO --
-finish help file
--- NEXT -- 
-fix help menu formatting
--- NEXT -- 
-clean up save_as section (may not need renumbering with smarter buttons)
+
 -- END --
 '''
 
@@ -16,7 +12,7 @@ import Tkinter as tk
 from tkFileDialog import askopenfilename, asksaveasfilename
 import xml.etree.ElementTree as ET
 from random import randrange
-from re import split, search
+from re import split, search, sub
 from tkFont import Font
 import ttk
 
@@ -195,54 +191,21 @@ class FlashCard(tk.Frame):
                                            title='Save the file as...',
                                            filetypes=[('xml files', '.xml'),
                                                          ('all files', '.*')])
-        FILE_EXISTS = False
         shebang = '<?xml version="1.0"?>\n'
-        
         if file_name:
-            try:
-                saved_file = open('%s' % file_name, 'r')
-                FILE_EXISTS = True
-            except IOError:
-                saved_file = open('%s' % file_name, 'w')
-                
-            if FILE_EXISTS:
-                lines = saved_file.readlines()
-                lines = lines[:-1]
-                saved_file.close()
-                saved_file = open('%s' % file_name, 'w')
-                if lines != []:
-                    if lines[0] != shebang:
-                        saved_file.write(shebang)
-                        saved_file.write('<data>\n')
-                    for line in lines:
-                        saved_file.write(line)
-                if self.file_list != []:
-                    saved_file.write('</answer></number>\n')
-                    for node in self.file_list:
-                        saved_file.write(ET.tostring(node))
-                saved_file.write('</data>')
-                saved_file.close()
-                tree = ET.parse(file_name)
-                root = tree.getroot()
-                counter = 1
-                for num_node in root:
-                    num_node.text = str(counter)
-                    counter += 1
-                saved_file = open('%s' % file_name, 'w')
-                saved_file.write(shebang)
-                saved_file.write('<data>')
-                for line in root:
-                    saved_file.write(ET.tostring(line))
-                saved_file.write('</data>')
-                saved_file.close()
+            saved_file = open('%s' % file_name, 'w')
+            saved_file.write(shebang)
+            if self.FILE_EXISTS == True or self.FILE_EXISTS == 'proceed':
+                new_root = sub('</data>', '', ET.tostring(self.root))
+                saved_file.write(new_root)
             else:
-                saved_file.write(shebang)
-                saved_file.write('<data>')
-                for i in self.file_list:
-                    saved_file.write(ET.tostring(i))     
-                saved_file.write('</data>')
-                saved_file.close()
-
+                saved_file.write('<data>\n')
+            if self.file_list != []:
+                for node in self.file_list:
+                    saved_file.write(ET.tostring(node))
+            saved_file.write('</data>')
+            saved_file.close()
+                
     def open_file(self):
         ''' opens a file for use by the program, prefers xml files '''
         
@@ -260,7 +223,7 @@ class FlashCard(tk.Frame):
         self.temp_display = []
         for iter in self.xml_obj:
             self.temp_display.append(iter)
-        
+
     def random_number(self):
         ''' helper function to aid in random review '''
         
@@ -271,14 +234,11 @@ class FlashCard(tk.Frame):
         
     def go_to(self):
         ''' specify which entry to jump to '''
-        
         workspace = str(self.focus_get())
         if 'creation' in workspace:
             try:
-                tree = ET.parse(self.file_name)
-                root = tree.getroot()
                 self.GOTO_USED = True
-                for num in root.findall('number'):
+                for num in self.root.findall('number'):
                     if num.text == self.an_num.get():
                         self.cq_text.delete(1.0, tk.END)
                         self.ca_text.delete(1.0, tk.END)
@@ -296,9 +256,7 @@ class FlashCard(tk.Frame):
                         self.ca_text.insert(1.0, node.find('answer').text)
         else:
             try:
-                tree = ET.parse(self.file_name)
-                root = tree.getroot()
-                for node in root:
+                for node in self.root:
                     if node.text == self.rd_num.get():
                         self.rq_text.delete(1.0, tk.END)
                         self.ra_text.delete(1.0, tk.END)
@@ -331,12 +289,6 @@ class FlashCard(tk.Frame):
                     if user_answer == node.find('answer').text.lower():
                         self.ra_text.insert(tk.END, 'Who\'s awesome? You\'re awesome!')
                         counter += 1
-                        '''
-                        if the answer isn't completely right, cycle through and 
-                        display all the correct words that were entered, and 
-                        blank lines where words were missed.  This can be repeated
-                        until the answer is completely right
-                        '''
                     else:
                         for orig_word in split('\W+', node.find('answer').text):
                             for ans_word in split('\W+', user_answer):
@@ -372,10 +324,8 @@ class FlashCard(tk.Frame):
                         temp_list.append(match.group(0))
                     max_from_file_list = int(max(temp_list)) + 1
                     
-                    tree = ET.parse(self.file_name)
-                    root = tree.getroot()
                     nums = []
-                    for num in root.findall('number'):
+                    for num in self.root.findall('number'):
                         nums.append(num.text)
                     max_from_open_file = int(max(nums)) + 1
                     
@@ -392,31 +342,19 @@ class FlashCard(tk.Frame):
                     self.an_num.set(int(num) + 1)
                     self.ca_text.delete(1.0, tk.END)
                     self.cq_text.delete(1.0, tk.END)
-            else:
-                num = self.an_num.get()
+            elif self.FILE_EXISTS == True:
+                nums = []
+                for num in self.root.findall('number'):
+                    nums.append(num.text)
+                next_max = int(max(nums)) + 1
                 question = self.cq_text.get(1.0, tk.END)
                 answer = self.ca_text.get(1.0, tk.END)
-                self.file_list.append(self.build(num, question, answer))
-                self.an_num.set(int(num) + 1)
+                self.file_list.append(self.build(str(next_max), question, answer))
+                self.an_num.set(int(next_max) + 1)
                 self.ca_text.delete(1.0, tk.END)
                 self.cq_text.delete(1.0, tk.END)
-            try:
-                if self.FILE_EXISTS == True:
-                    tree = ET.parse(self.file_name)
-                    root = tree.getroot()
-                    
-                    nums = []
-                    for num in root.findall('number'):
-                        nums.append(num.text)
-                    next_max = int(max(nums)) + 1
-                    question = self.cq_text.get(1.0, tk.END)
-                    answer = self.ca_text.get(1.0, tk.END)
-                    self.file_list.append(self.build(str(next_max), question, answer))
-                    self.an_num.set(int(next_max) + 1)
-                    self.ca_text.delete(1.0, tk.END)
-                    self.cq_text.delete(1.0, tk.END)
-                    self.FILE_EXISTS = 'proceed'
-            except AttributeError:
+                self.FILE_EXISTS = 'proceed'
+            else:
                 num = self.an_num.get()
                 question = self.cq_text.get(1.0, tk.END)
                 answer = self.ca_text.get(1.0, tk.END)
@@ -433,9 +371,7 @@ class FlashCard(tk.Frame):
                     try:
                         if random_num not in self.random_tracker:
                             self.random_tracker.append(random_num)
-                            tree = ET.parse(self.file_name)
-                            root = tree.getroot()
-                            for num in root.findall('number'):                    
+                            for num in self.root.findall('number'):                    
                                 if num.text == str(random_num):
                                     self.rq_text.delete(1.0, tk.END)
                                     self.ra_text.delete(1.0, tk.END)
@@ -541,7 +477,9 @@ class FlashCard(tk.Frame):
         notebook.pack(fill='both', expand='y', padx=2, pady=3)
         
         create_tab = ttk.Frame(notebook, name='create', style='Blue.TFrame')
-        create_msg = ''' This is the creation message '''
+        create_msg = '''The Creation Station allows you to enter questions and \
+answers into the text fields and save each one sequentially by hitting the next \
+button.  Save the entries with File->Save As drop down menu. '''
         create_label = ttk.Label(create_tab, wraplength='4i', justify=tk.LEFT,
                                  anchor=tk.N, text=create_msg, style='Blue.TLabel')
         
@@ -550,24 +488,27 @@ class FlashCard(tk.Frame):
         create_tab.columnconfigure((0,1), weight=1, uniform=1)
         
         reader_tab = ttk.Frame(notebook, name='read', style='Blue.TFrame')
-        reader_msg = '''This is a slightly longer reader message that will 
-        concern all of my followers for years to come.  Are you still paying 
-        attention?'''
+        reader_msg = '''The Reader workspace is for reviewing an opened file of \
+question/answer entries.  The Randomizer feature will randomize review questions. \
+The default behavior is to cycle through sequentially.  Giving up will show the \
+complete answer.'''
         reader_label = ttk.Label(reader_tab, wraplength='4i', justify=tk.LEFT,
-                                 anchor=tk.N, text=reader_msg)
+                                 anchor=tk.N, text=reader_msg, style='Blue.TLabel')
         reader_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
         reader_tab.rowconfigure(1, weight=1)
         reader_tab.columnconfigure((0,1), weight=1, uniform=1)
         
         comp_tab = ttk.Frame(notebook, name='compare', style='Blue.TFrame')
-        comp_msg = '''This is a slightly longer reader message that will 
-        concern all of my followers for years to come.  Are you still paying 
-        attention?'''
+        comp_msg = '''The Compare button checks to see if the answer is \
+completely right.  If the answer is only partially correct, it will cycle through \
+and display all the correct words that were entered, then insert blank lines \
+where words were missed.  This can be repeated until the answer is completely right.'''
         comp_label = ttk.Label(comp_tab, wraplength='4i', justify=tk.LEFT,
-                                 anchor=tk.N, text=comp_msg)
-        reader_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
-        reader_tab.rowconfigure(1, weight=1)
-        reader_tab.columnconfigure((0,1), weight=1, uniform=1)
+                                 anchor=tk.N, text=comp_msg, style='Blue.TLabel')
+        
+        comp_label.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
+        comp_tab.rowconfigure(1, weight=1)
+        comp_tab.columnconfigure((0,1), weight=1, uniform=1)
 
         notebook.add(create_tab, text='Creation Station', underline=0, padding=2)
         notebook.add(reader_tab, text='Reader', underline=0, padding=2)
