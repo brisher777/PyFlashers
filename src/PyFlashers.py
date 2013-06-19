@@ -4,7 +4,7 @@ Created on May 18, 2013
 @author: ben
 
 -- TODO --
-
+clean up old threads of code
 -- END --
 '''
 
@@ -37,6 +37,7 @@ class FlashCard(tk.Frame):
         self.IS_RANDOM = tk.BooleanVar()
         
         #make things beautimous
+        self.style.theme_use('default')
         self.style.configure('Blue.TFrame', background='blue')
         self.style.configure('Blue.TNotebook', background='blue')
         self.style.configure('Blue.TButton', foreground='yellow',
@@ -267,8 +268,9 @@ class FlashCard(tk.Frame):
                 self.ra_text.delete(1.0, tk.END)
                 self.rq_text.insert(1.0, 'Did you open a file?')    
         
-    # generator function to yield 1 'number' entry from the opened file
+    
     def read_xml(self, data):
+        ''' generator function to yield 1 'number' entry from the opened file '''
         tree = ET.parse(data)
         self.root = tree.getroot()
         
@@ -281,16 +283,18 @@ class FlashCard(tk.Frame):
         '''Compares answers given to those in the original file'''
         counter = 0
         
-        user_answer = self.ra_text.get(1.0, tk.END).strip().lower()
+        user_answer = self.ra_text.get(1.0, tk.END).strip(' ,\n').lower()
         self.ra_text.delete(1.0, tk.END)
         try:
             for node in self.root:
                 if node.text == self.rd_num.get():
-                    if user_answer == node.find('answer').text.lower():
+                    new_node = sub('[ ,\n()]', ' ', node.find('answer').text.lower())
+                    new_node = sub(' +', ' ', new_node).strip()
+                    if user_answer == new_node:
                         self.ra_text.insert(tk.END, 'Who\'s awesome? You\'re awesome!')
                         counter += 1
                     else:
-                        for orig_word in split('\W+', node.find('answer').text):
+                        for orig_word in split('\W+', node.find('answer').text.strip(' ,\n')):
                             for ans_word in split('\W+', user_answer):
                                 if orig_word.lower() == ans_word:
                                     counter += 1
@@ -313,11 +317,14 @@ class FlashCard(tk.Frame):
         return text in '0123456789' and len(value_if_allowed) < 4
       
     def next(self):
+        ''' cycles through entries, and saves them if in the creation workspace '''
+        
         workspace = str(self.focus_get())
         if 'creation' in workspace:
             if self.FILE_EXISTS == 'proceed':
                 if self.GOTO_USED == True:
                     ''' sanity check to not let the user overwrite entries '''
+                    
                     temp_list = []
                     for i in self.file_list:
                         match = search('\d+', ET.tostring(i))
@@ -366,7 +373,7 @@ class FlashCard(tk.Frame):
         else:
             self.ra_text.delete(1.0, tk.END)
             try:
-                if self.IS_RANDOM.get() == 1:
+                if self.IS_RANDOM.get() == 1: # is the randomizer turned on?
                     random_num = self.random_number()
                     try:
                         if random_num not in self.random_tracker:
@@ -377,8 +384,8 @@ class FlashCard(tk.Frame):
                                     self.ra_text.delete(1.0, tk.END)
                                     self.rd_num.set(num.text)
                                     self.rq_text.insert(1.0, num.find('question').text)
-                        else:
-                            self.next()
+                        else: #force recursion runtime error to denote end of file
+                            self.next() 
                     except RuntimeError:
                         self.rq_text.delete(1.0, tk.END)
                         self.ra_text.delete(1.0, tk.END)
@@ -457,7 +464,8 @@ class FlashCard(tk.Frame):
 
 
     def right_click_binder(self, rclk):
-    
+        ''' event handler for right clicking inside the gui '''
+        
         try:
             for box in [ 'Text', 'Entry', 'Listbox', 'Label']: #
                 rclk.bind_class(box, sequence='<Button-3>',
@@ -466,6 +474,8 @@ class FlashCard(tk.Frame):
             pass
         
     def help_page(self):
+        ''' builds a helpful interface '''
+        
         help_root = tk.Toplevel(background='dark blue')
         help_root.title('Help Page')
         
