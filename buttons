@@ -1,0 +1,19 @@
+give_button = ttk.Button(self.read_tab, text='I give up', style='Blue.TButton')
+give_button.grid(row=2, column=0, sticky='news')
+
+comp_button = ttk.Button(self.read_tab, text='Compare', style='Blue.TButton')
+comp_button.grid(row=2, column=2, sticky='news')
+
+next_button = ttk.Button(self.read_tab, text='Next', style='Blue.TButton')
+next_button.grid(row=0, column=2, sticky='news')
+
+go_to = ttk.Button(self.read_tab, text='Go to...', style='Blue.TButton')
+go_to.grid(row=0, column=0, sticky='we')
+
+next_button = ttk.Button(self.create_tab, text='Next',
+                         style='Blue.TButton')
+next_button.grid(row=0, column=2, sticky='nsew')
+
+go_to = ttk.Button(self.create_tab, text='Go to...', 
+                   style='Blue.TButton')
+go_to.grid(row=0, column=0, sticky='we')
