@@ -297,6 +297,7 @@ class FlashCard(tk.Frame):
                     if orig_word != ans_word:
                         self.texts['Read Answers'].insert(tk.END, ('_' * len(orig_word) + ' '))
             if counter == 0:
+                self.texts['Read Answers'].delete(1.0, tk.END)
                 self.texts['Read Answers'].insert(tk.END, 'You were completely wrong, suck less next time.')
             return 'break'
         except AttributeError:
